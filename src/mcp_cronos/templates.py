@@ -9,6 +9,7 @@ from dataclasses import dataclass, field
 from typing import Optional
 from datetime import date
 
+from mcp_cronos.config import load_config
 from mcp_cronos.utils.dates import get_standup_title
 
 
@@ -116,17 +117,22 @@ class DiarioGiornaliero:
         """
         Converte il diario giornaliero in formato markdown.
 
+        Section names are taken from the active config so they reflect the
+        configured language (e.g. "Cosa ho fatto ieri" for Italian, "What I
+        did yesterday" for English).
+
         Returns:
             Stringa markdown completa
         """
+        config = load_config()
         lines = []
 
         # Titolo H1
         lines.append(f"# {self.titolo}")
         lines.append("")
 
-        # Sezione "Cosa ho fatto ieri"
-        lines.append("## Cosa ho fatto ieri")
+        # Entries section
+        lines.append(f"## {config.section_entries}")
         lines.append("")
 
         # Entries con separatori
@@ -136,8 +142,8 @@ class DiarioGiornaliero:
             lines.append("---")
             lines.append("")
 
-        # Sezione Bloccanti
-        lines.append("## Bloccanti")
+        # Blockers section
+        lines.append(f"## {config.section_blockers}")
         lines.append("")
         lines.append(self.bloccanti)
         lines.append("")
@@ -163,20 +169,12 @@ class DiarioGiornaliero:
         self.bloccanti = bloccanti if bloccanti else "Nessuno"
 
 
-# Template vuoto per un nuovo file del diario
-TEMPLATE_NUOVO_DIARIO = """# {titolo}
-
-## Cosa ho fatto ieri
-
-## Bloccanti
-
-Nessuno
-"""
-
-
 def crea_template_vuoto(data: date) -> str:
     """
     Crea un template vuoto per un nuovo file del diario.
+
+    Section names and the blockers default are taken from the active config so
+    that the generated template reflects the configured language.
 
     Args:
         data: Data del file
@@ -184,5 +182,6 @@ def crea_template_vuoto(data: date) -> str:
     Returns:
         Stringa markdown con il template vuoto
     """
+    config = load_config()
     titolo = get_standup_title(data)
-    return TEMPLATE_NUOVO_DIARIO.format(titolo=titolo)
+    return f"# {titolo}\n\n## {config.section_entries}\n\n## {config.section_blockers}\n\n{config.blockers_default}\n"
