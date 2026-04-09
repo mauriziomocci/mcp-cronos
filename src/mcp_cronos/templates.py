@@ -6,8 +6,8 @@ per la generazione del markdown.
 """
 
 from dataclasses import dataclass, field
-from typing import Optional
 from datetime import date
+from typing import Optional
 
 from mcp_cronos.config import load_config
 from mcp_cronos.utils.dates import get_standup_title
@@ -16,6 +16,7 @@ from mcp_cronos.utils.dates import get_standup_title
 @dataclass
 class Riferimento:
     """Rappresenta un riferimento (repository, branch, Jira, MR, etc.)."""
+
     tipo: str  # "repository", "branch", "jira", "gitlab_mr", etc.
     valore: str
     url: Optional[str] = None
@@ -43,6 +44,7 @@ class Entry:
     - GitLab MR: [MR !{numero}]({url})
     ```
     """
+
     progetto: str
     descrizione: str
     paragrafo_intro: str
@@ -104,6 +106,7 @@ class DiarioGiornaliero:
 
     Il titolo segue il formato "Per lo Stand-up {Giorno+1} {Mese} {Anno}".
     """
+
     data: date
     entries: list[Entry] = field(default_factory=list)
     bloccanti: str = "Nessuno"

@@ -66,8 +66,7 @@ def aggiungi_a_progetto(
 
     if not file_path.exists():
         return _crea_nuova_entry(
-            file_path, file_date, progetto, titolo_fase, contenuto,
-            richiesto_da, riferimenti_lines
+            file_path, file_date, progetto, titolo_fase, contenuto, richiesto_da, riferimenti_lines
         )
 
     file_content = file_path.read_text(encoding="utf-8")
@@ -81,13 +80,18 @@ def aggiungi_a_progetto(
 
     if match:
         return _aggiungi_fase(
-            file_path, file_content, match, progetto,
-            titolo_fase, contenuto, richiesto_da, riferimenti_lines
+            file_path,
+            file_content,
+            match,
+            progetto,
+            titolo_fase,
+            contenuto,
+            richiesto_da,
+            riferimenti_lines,
         )
     else:
         return _crea_nuova_entry(
-            file_path, file_date, progetto, titolo_fase, contenuto,
-            richiesto_da, riferimenti_lines
+            file_path, file_date, progetto, titolo_fase, contenuto, richiesto_da, riferimenti_lines
         )
 
 
@@ -112,12 +116,21 @@ def _build_riferimenti_lines(repository, branch, jira_ticket, jira_url, gitlab_m
     return lines
 
 
-def _aggiungi_fase(file_path, file_content, match, progetto, titolo_fase, contenuto, richiesto_da, riferimenti_lines):
+def _aggiungi_fase(
+    file_path,
+    file_content,
+    match,
+    progetto,
+    titolo_fase,
+    contenuto,
+    richiesto_da,
+    riferimenti_lines,
+):
     """Aggiunge una sotto-sezione H4 a un'entry esistente."""
     # Find the end of the current entry
     config = load_config()
     escaped_blockers = re.escape(config.section_blockers)
-    rest = file_content[match.end():]
+    rest = file_content[match.end() :]
     end_pattern = re.search(rf"\n(?=### |\n## {escaped_blockers})", rest)
     if end_pattern:
         insert_pos = match.end() + end_pattern.start()
@@ -149,11 +162,13 @@ def _aggiungi_fase(file_path, file_content, match, progetto, titolo_fase, conten
         "progetto": progetto,
         "fase": titolo_fase,
         "modalita": "aggiunto_a_esistente",
-        "messaggio": f"Fase '{titolo_fase}' aggiunta all'entry '{progetto}'"
+        "messaggio": f"Fase '{titolo_fase}' aggiunta all'entry '{progetto}'",
     }
 
 
-def _crea_nuova_entry(file_path, file_date, progetto, titolo_fase, contenuto, richiesto_da, riferimenti_lines):
+def _crea_nuova_entry(
+    file_path, file_date, progetto, titolo_fase, contenuto, richiesto_da, riferimenti_lines
+):
     """Crea una nuova entry con il contenuto come prima fase."""
     lines = [f"### {progetto} - {titolo_fase}\n"]
     if richiesto_da:
@@ -176,9 +191,7 @@ def _crea_nuova_entry(file_path, file_date, progetto, titolo_fase, contenuto, ri
     if bloccanti_match:
         insert_pos = bloccanti_match.start()
         new_content = (
-            file_content[:insert_pos] +
-            "\n" + entry_md + "\n\n---\n" +
-            file_content[insert_pos:]
+            file_content[:insert_pos] + "\n" + entry_md + "\n\n---\n" + file_content[insert_pos:]
         )
     else:
         new_content = (
@@ -195,5 +208,5 @@ def _crea_nuova_entry(file_path, file_date, progetto, titolo_fase, contenuto, ri
         "progetto": progetto,
         "fase": titolo_fase,
         "modalita": "nuova_entry",
-        "messaggio": f"Nuova entry creata per '{progetto}'"
+        "messaggio": f"Nuova entry creata per '{progetto}'",
     }

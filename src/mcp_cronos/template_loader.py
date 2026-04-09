@@ -14,7 +14,6 @@ source, while keeping sensible defaults bundled with the distribution.
 import os
 from pathlib import Path
 
-
 _BUILTIN_DIR = Path(__file__).parent / "default_templates"
 
 # Authoritative set of valid template names. Guards against typos and prevents

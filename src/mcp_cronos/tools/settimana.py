@@ -63,12 +63,16 @@ def riassunto_settimana(
             if str(d) not in progetti[proj]["date"]:
                 progetti[proj]["date"].append(str(d))
 
-            progetti[proj]["entries"].append({
-                "data": str(d),
-                "descrizione": entry.descrizione,
-                "richiesto_da": entry.richiesto_da,
-                "contenuto_preview": entry.contenuto[:300] + "..." if len(entry.contenuto) > 300 else entry.contenuto,
-            })
+            progetti[proj]["entries"].append(
+                {
+                    "data": str(d),
+                    "descrizione": entry.descrizione,
+                    "richiesto_da": entry.richiesto_da,
+                    "contenuto_preview": entry.contenuto[:300] + "..."
+                    if len(entry.contenuto) > 300
+                    else entry.contenuto,
+                }
+            )
 
     # Ordina per numero di giorni (progetto piu' presente prima)
     progetti_ordinati = sorted(
@@ -79,12 +83,14 @@ def riassunto_settimana(
 
     risultato = []
     for proj, data_proj in progetti_ordinati:
-        risultato.append({
-            "progetto": proj,
-            "giorni": len(data_proj["date"]),
-            "date": data_proj["date"],
-            "entries": data_proj["entries"],
-        })
+        risultato.append(
+            {
+                "progetto": proj,
+                "giorni": len(data_proj["date"]),
+                "date": data_proj["date"],
+                "entries": data_proj["entries"],
+            }
+        )
 
     return {
         "settimana": {

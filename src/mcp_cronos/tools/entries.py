@@ -73,17 +73,15 @@ def aggiungi_entry(
     if branch:
         riferimenti.append(Riferimento(tipo="Branch", valore=branch))
     if jira_ticket:
-        riferimenti.append(Riferimento(
-            tipo="Jira",
-            valore=jira_ticket,
-            url=jira_url
-        ))
+        riferimenti.append(Riferimento(tipo="Jira", valore=jira_ticket, url=jira_url))
     if gitlab_mr:
-        riferimenti.append(Riferimento(
-            tipo="GitLab MR",
-            valore=f"MR {gitlab_mr}" if not gitlab_mr.startswith("MR") else gitlab_mr,
-            url=gitlab_mr_url
-        ))
+        riferimenti.append(
+            Riferimento(
+                tipo="GitLab MR",
+                valore=f"MR {gitlab_mr}" if not gitlab_mr.startswith("MR") else gitlab_mr,
+                url=gitlab_mr_url,
+            )
+        )
 
     # Crea l'entry
     entry = Entry(
@@ -92,7 +90,7 @@ def aggiungi_entry(
         paragrafo_intro=paragrafo_intro,
         contenuto=contenuto,
         richiesto_da=richiesto_da,
-        riferimenti=riferimenti
+        riferimenti=riferimenti,
     )
 
     # Ottieni il path del file
@@ -120,7 +118,7 @@ def aggiungi_entry(
         "titolo_standup": get_standup_title(file_date),
         "progetto": progetto,
         "descrizione": descrizione,
-        "messaggio": f"Entry aggiunta al diario per {file_date}"
+        "messaggio": f"Entry aggiunta al diario per {file_date}",
     }
 
 
@@ -152,11 +150,7 @@ def _insert_entry_in_content(content: str, entry: Entry) -> str:
         entry_md = entry.to_markdown()
 
         # Insert with separator
-        new_content = (
-            content[:insert_pos] +
-            "\n" + entry_md + "\n\n---\n" +
-            content[insert_pos:]
-        )
+        new_content = content[:insert_pos] + "\n" + entry_md + "\n\n---\n" + content[insert_pos:]
     else:
         # No blockers section found -- append at end and add one
         entry_md = entry.to_markdown()
@@ -197,7 +191,7 @@ def imposta_bloccanti(
     if not file_path.exists():
         return {
             "errore": f"File non trovato per data {file_date}",
-            "suggerimento": "Usa aggiungi_entry per creare il file prima di impostare i bloccanti"
+            "suggerimento": "Usa aggiungi_entry per creare il file prima di impostare i bloccanti",
         }
 
     # Leggi il contenuto
@@ -223,5 +217,5 @@ def imposta_bloccanti(
         "file": str(file_path),
         "data": str(file_date),
         "bloccanti": bloccanti,
-        "messaggio": f"Bloccanti aggiornati per {file_date}"
+        "messaggio": f"Bloccanti aggiornati per {file_date}",
     }

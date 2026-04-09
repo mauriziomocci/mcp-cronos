@@ -75,19 +75,21 @@ def genera_riassunto_standup(
                 files_letti.append(str(d))
                 bloccanti = diary.bloccanti
                 for entry in diary.entries:
-                    all_entries.append({
-                        "data": str(d),
-                        "progetto": entry.progetto,
-                        "descrizione": entry.descrizione,
-                        "contenuto_completo": entry.contenuto,
-                        "richiesto_da": entry.richiesto_da,
-                    })
+                    all_entries.append(
+                        {
+                            "data": str(d),
+                            "progetto": entry.progetto,
+                            "descrizione": entry.descrizione,
+                            "contenuto_completo": entry.contenuto,
+                            "richiesto_da": entry.richiesto_da,
+                        }
+                    )
 
     if not all_entries:
         return {
             "errore": "Nessuna entry trovata nel periodo specificato",
             "date_cercate": [str(d) for d in dates_to_read],
-            "suggerimento": "Verifica che esistano file del diario per le date specificate"
+            "suggerimento": "Verifica che esistano file del diario per le date specificate",
         }
 
     # Determina il contesto temporale per il riassunto
@@ -98,10 +100,7 @@ def genera_riassunto_standup(
         "contesto": contesto,
         "entries": all_entries,
         "bloccanti": bloccanti,
-        "periodo": {
-            "da": str(dates_to_read[0]),
-            "a": str(dates_to_read[-1])
-        },
+        "periodo": {"da": str(dates_to_read[0]), "a": str(dates_to_read[-1])},
         "files_letti": files_letti,
         "num_entries": len(all_entries),
         "progetti": list(dict.fromkeys(e["progetto"] for e in all_entries)),

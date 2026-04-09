@@ -20,23 +20,23 @@ Utilizzo:
     python -m mcp_cronos.server   # Alternativa
 """
 
+import json
+
 from mcp.server import Server
 from mcp.server.stdio import stdio_server
-from mcp.types import Tool, TextContent
+from mcp.types import TextContent, Tool
+
+from mcp_cronos.tools.aggiungi_progetto import aggiungi_a_progetto
+from mcp_cronos.tools.cerca import cerca_nel_diario
+from mcp_cronos.tools.consolida import consolida_diario
 
 # Import tool
 from mcp_cronos.tools.entries import aggiungi_entry, imposta_bloccanti
-from mcp_cronos.tools.reader import leggi_diario, lista_progetti
-from mcp_cronos.tools.standup import genera_riassunto_standup
 from mcp_cronos.tools.fine_giornata import fine_giornata
-from mcp_cronos.tools.consolida import consolida_diario
-from mcp_cronos.tools.cerca import cerca_nel_diario
-from mcp_cronos.tools.settimana import riassunto_settimana
-from mcp_cronos.tools.aggiungi_progetto import aggiungi_a_progetto
+from mcp_cronos.tools.reader import leggi_diario, lista_progetti
 from mcp_cronos.tools.scrivi_fine_giornata import scrivi_fine_giornata
-
-import json
-
+from mcp_cronos.tools.settimana import riassunto_settimana
+from mcp_cronos.tools.standup import genera_riassunto_standup
 
 # Crea server MCP
 server = Server("mcp-cronos")
@@ -72,59 +72,31 @@ Restituisce: Conferma dell'operazione con path del file e dettagli.""",
         inputSchema={
             "type": "object",
             "properties": {
-                "progetto": {
-                    "type": "string",
-                    "description": "Nome del progetto"
-                },
-                "descrizione": {
-                    "type": "string",
-                    "description": "Breve descrizione del lavoro"
-                },
-                "paragrafo_intro": {
-                    "type": "string",
-                    "description": "Paragrafo introduttivo"
-                },
-                "contenuto": {
-                    "type": "string",
-                    "description": "Contenuto aggiuntivo (opzionale)"
-                },
+                "progetto": {"type": "string", "description": "Nome del progetto"},
+                "descrizione": {"type": "string", "description": "Breve descrizione del lavoro"},
+                "paragrafo_intro": {"type": "string", "description": "Paragrafo introduttivo"},
+                "contenuto": {"type": "string", "description": "Contenuto aggiuntivo (opzionale)"},
                 "richiesto_da": {
                     "type": "string",
-                    "description": "Nome di chi ha richiesto il lavoro (opzionale)"
+                    "description": "Nome di chi ha richiesto il lavoro (opzionale)",
                 },
-                "repository": {
-                    "type": "string",
-                    "description": "Nome del repository (opzionale)"
-                },
-                "branch": {
-                    "type": "string",
-                    "description": "Nome del branch (opzionale)"
-                },
-                "jira_ticket": {
-                    "type": "string",
-                    "description": "Codice ticket Jira (opzionale)"
-                },
-                "jira_url": {
-                    "type": "string",
-                    "description": "URL del ticket Jira (opzionale)"
-                },
-                "gitlab_mr": {
-                    "type": "string",
-                    "description": "Numero MR GitLab (opzionale)"
-                },
+                "repository": {"type": "string", "description": "Nome del repository (opzionale)"},
+                "branch": {"type": "string", "description": "Nome del branch (opzionale)"},
+                "jira_ticket": {"type": "string", "description": "Codice ticket Jira (opzionale)"},
+                "jira_url": {"type": "string", "description": "URL del ticket Jira (opzionale)"},
+                "gitlab_mr": {"type": "string", "description": "Numero MR GitLab (opzionale)"},
                 "gitlab_mr_url": {
                     "type": "string",
-                    "description": "URL della MR GitLab (opzionale)"
+                    "description": "URL della MR GitLab (opzionale)",
                 },
                 "data": {
                     "type": "string",
-                    "description": "Data YYYY-MM-DD (opzionale, default oggi)"
-                }
+                    "description": "Data YYYY-MM-DD (opzionale, default oggi)",
+                },
             },
-            "required": ["progetto", "descrizione", "paragrafo_intro"]
-        }
+            "required": ["progetto", "descrizione", "paragrafo_intro"],
+        },
     ),
-
     Tool(
         name="cronos_leggi_diario",
         description="""Legge il contenuto del diario per una data o range di date.
@@ -145,26 +117,13 @@ Restituisce: Contenuto del diario con entries, progetti e bloccanti.""",
         inputSchema={
             "type": "object",
             "properties": {
-                "data": {
-                    "type": "string",
-                    "description": "Data singola YYYY-MM-DD"
-                },
-                "data_inizio": {
-                    "type": "string",
-                    "description": "Data inizio range YYYY-MM-DD"
-                },
-                "data_fine": {
-                    "type": "string",
-                    "description": "Data fine range YYYY-MM-DD"
-                },
-                "ultimi_giorni": {
-                    "type": "integer",
-                    "description": "Numero di giorni da leggere"
-                }
-            }
-        }
+                "data": {"type": "string", "description": "Data singola YYYY-MM-DD"},
+                "data_inizio": {"type": "string", "description": "Data inizio range YYYY-MM-DD"},
+                "data_fine": {"type": "string", "description": "Data fine range YYYY-MM-DD"},
+                "ultimi_giorni": {"type": "integer", "description": "Numero di giorni da leggere"},
+            },
+        },
     ),
-
     Tool(
         name="cronos_imposta_bloccanti",
         description="""Imposta o aggiorna la sezione Bloccanti del diario.
@@ -179,19 +138,15 @@ Restituisce: Conferma dell'operazione con path del file.""",
         inputSchema={
             "type": "object",
             "properties": {
-                "bloccanti": {
-                    "type": "string",
-                    "description": "Testo dei bloccanti"
-                },
+                "bloccanti": {"type": "string", "description": "Testo dei bloccanti"},
                 "data": {
                     "type": "string",
-                    "description": "Data YYYY-MM-DD (opzionale, default oggi)"
-                }
+                    "description": "Data YYYY-MM-DD (opzionale, default oggi)",
+                },
             },
-            "required": ["bloccanti"]
-        }
+            "required": ["bloccanti"],
+        },
     ),
-
     Tool(
         name="cronos_riassunto_standup",
         description="""Genera un riassunto discorsivo del diario per lo standup.
@@ -221,22 +176,12 @@ Restituisce: Contenuto del diario con istruzioni di stile per la generazione del
         inputSchema={
             "type": "object",
             "properties": {
-                "data": {
-                    "type": "string",
-                    "description": "Data singola YYYY-MM-DD"
-                },
-                "data_inizio": {
-                    "type": "string",
-                    "description": "Data inizio range YYYY-MM-DD"
-                },
-                "data_fine": {
-                    "type": "string",
-                    "description": "Data fine range YYYY-MM-DD"
-                }
-            }
-        }
+                "data": {"type": "string", "description": "Data singola YYYY-MM-DD"},
+                "data_inizio": {"type": "string", "description": "Data inizio range YYYY-MM-DD"},
+                "data_fine": {"type": "string", "description": "Data fine range YYYY-MM-DD"},
+            },
+        },
     ),
-
     Tool(
         name="cronos_fine_giornata",
         description="""Chiusura di fine giornata: legge le entry del diario e restituisce istruzioni per ristrutturarle.
@@ -263,12 +208,11 @@ Restituisce: Entry del diario con istruzioni di stile per la generazione.""",
             "properties": {
                 "data": {
                     "type": "string",
-                    "description": "Data YYYY-MM-DD (opzionale, default oggi)"
+                    "description": "Data YYYY-MM-DD (opzionale, default oggi)",
                 }
-            }
-        }
+            },
+        },
     ),
-
     Tool(
         name="cronos_consolida_diario",
         description="""Consolida il diario rileggendolo e riscrivendolo in modo coerente.
@@ -293,12 +237,11 @@ Restituisce: Contenuto del file con analisi e istruzioni per il consolidamento."
             "properties": {
                 "data": {
                     "type": "string",
-                    "description": "Data YYYY-MM-DD (opzionale, default oggi)"
+                    "description": "Data YYYY-MM-DD (opzionale, default oggi)",
                 }
-            }
-        }
+            },
+        },
     ),
-
     Tool(
         name="cronos_lista_progetti",
         description="""Elenca i progetti menzionati nel diario in un periodo.
@@ -314,22 +257,15 @@ Restituisce: Lista progetti con occorrenze e date.""",
         inputSchema={
             "type": "object",
             "properties": {
-                "data_inizio": {
-                    "type": "string",
-                    "description": "Data inizio YYYY-MM-DD"
-                },
-                "data_fine": {
-                    "type": "string",
-                    "description": "Data fine YYYY-MM-DD"
-                },
+                "data_inizio": {"type": "string", "description": "Data inizio YYYY-MM-DD"},
+                "data_fine": {"type": "string", "description": "Data fine YYYY-MM-DD"},
                 "ultimi_giorni": {
                     "type": "integer",
-                    "description": "Giorni da analizzare (default 30)"
-                }
-            }
-        }
+                    "description": "Giorni da analizzare (default 30)",
+                },
+            },
+        },
     ),
-
     Tool(
         name="cronos_cerca",
         description="""Cerca testo nelle entry del diario.
@@ -353,27 +289,17 @@ Restituisce: Lista di match con data, progetto, contesto.""",
         inputSchema={
             "type": "object",
             "properties": {
-                "query": {
-                    "type": "string",
-                    "description": "Testo da cercare (supporta regex)"
-                },
-                "data_inizio": {
-                    "type": "string",
-                    "description": "Data inizio YYYY-MM-DD"
-                },
-                "data_fine": {
-                    "type": "string",
-                    "description": "Data fine YYYY-MM-DD"
-                },
+                "query": {"type": "string", "description": "Testo da cercare (supporta regex)"},
+                "data_inizio": {"type": "string", "description": "Data inizio YYYY-MM-DD"},
+                "data_fine": {"type": "string", "description": "Data fine YYYY-MM-DD"},
                 "ultimi_giorni": {
                     "type": "integer",
-                    "description": "Giorni da cercare (default 90)"
-                }
+                    "description": "Giorni da cercare (default 90)",
+                },
             },
-            "required": ["query"]
-        }
+            "required": ["query"],
+        },
     ),
-
     Tool(
         name="cronos_settimana",
         description="""Riassunto settimanale del diario raggruppato per progetto.
@@ -397,12 +323,11 @@ Restituisce: Riassunto per progetto con giorni, date e attivita'.""",
             "properties": {
                 "data": {
                     "type": "string",
-                    "description": "Data nella settimana YYYY-MM-DD (default: corrente)"
+                    "description": "Data nella settimana YYYY-MM-DD (default: corrente)",
                 }
-            }
-        }
+            },
+        },
     ),
-
     Tool(
         name="cronos_aggiungi_a_progetto",
         description="""Aggiunge contenuto a un'entry di progetto esistente nel diario.
@@ -435,55 +360,27 @@ Restituisce: Conferma con modalita' (aggiunto_a_esistente o nuova_entry).""",
         inputSchema={
             "type": "object",
             "properties": {
-                "progetto": {
-                    "type": "string",
-                    "description": "Nome esatto del progetto"
-                },
-                "titolo_fase": {
-                    "type": "string",
-                    "description": "Titolo della sotto-sezione"
-                },
-                "contenuto": {
-                    "type": "string",
-                    "description": "Contenuto della sotto-sezione"
-                },
+                "progetto": {"type": "string", "description": "Nome esatto del progetto"},
+                "titolo_fase": {"type": "string", "description": "Titolo della sotto-sezione"},
+                "contenuto": {"type": "string", "description": "Contenuto della sotto-sezione"},
                 "richiesto_da": {
                     "type": "string",
-                    "description": "Chi ha richiesto il lavoro (opzionale)"
+                    "description": "Chi ha richiesto il lavoro (opzionale)",
                 },
-                "repository": {
-                    "type": "string",
-                    "description": "Nome del repository (opzionale)"
-                },
-                "branch": {
-                    "type": "string",
-                    "description": "Nome del branch (opzionale)"
-                },
-                "jira_ticket": {
-                    "type": "string",
-                    "description": "Codice ticket Jira (opzionale)"
-                },
-                "jira_url": {
-                    "type": "string",
-                    "description": "URL del ticket Jira (opzionale)"
-                },
-                "gitlab_mr": {
-                    "type": "string",
-                    "description": "Numero MR GitLab (opzionale)"
-                },
+                "repository": {"type": "string", "description": "Nome del repository (opzionale)"},
+                "branch": {"type": "string", "description": "Nome del branch (opzionale)"},
+                "jira_ticket": {"type": "string", "description": "Codice ticket Jira (opzionale)"},
+                "jira_url": {"type": "string", "description": "URL del ticket Jira (opzionale)"},
+                "gitlab_mr": {"type": "string", "description": "Numero MR GitLab (opzionale)"},
                 "gitlab_mr_url": {
                     "type": "string",
-                    "description": "URL della MR GitLab (opzionale)"
+                    "description": "URL della MR GitLab (opzionale)",
                 },
-                "data": {
-                    "type": "string",
-                    "description": "Data YYYY-MM-DD (default: oggi)"
-                }
+                "data": {"type": "string", "description": "Data YYYY-MM-DD (default: oggi)"},
             },
-            "required": ["progetto", "titolo_fase", "contenuto"]
-        }
+            "required": ["progetto", "titolo_fase", "contenuto"],
+        },
     ),
-
     Tool(
         name="cronos_scrivi_fine_giornata",
         description="""Scrive il file di fine giornata con il contenuto generato.
@@ -501,15 +398,12 @@ Restituisce: Conferma con path del file scritto.""",
             "properties": {
                 "contenuto": {
                     "type": "string",
-                    "description": "Contenuto markdown completo del file"
+                    "description": "Contenuto markdown completo del file",
                 },
-                "data": {
-                    "type": "string",
-                    "description": "Data YYYY-MM-DD (default: oggi)"
-                }
+                "data": {"type": "string", "description": "Data YYYY-MM-DD (default: oggi)"},
             },
-            "required": ["contenuto"]
-        }
+            "required": ["contenuto"],
+        },
     ),
 ]
 
@@ -517,6 +411,7 @@ Restituisce: Conferma con path del file scritto.""",
 # ============================================================================
 # HANDLER TOOL
 # ============================================================================
+
 
 @server.list_tools()
 async def list_tools():
@@ -623,35 +518,31 @@ async def call_tool(name: str, arguments: dict):
             result = {"errore": f"Tool '{name}' non riconosciuto"}
 
         # Formatta output come JSON
-        return [TextContent(
-            type="text",
-            text=json.dumps(result, indent=2, ensure_ascii=False, default=str)
-        )]
+        return [
+            TextContent(
+                type="text", text=json.dumps(result, indent=2, ensure_ascii=False, default=str)
+            )
+        ]
 
     except Exception as e:
-        return [TextContent(
-            type="text",
-            text=json.dumps({"errore": str(e)}, ensure_ascii=False)
-        )]
+        return [TextContent(type="text", text=json.dumps({"errore": str(e)}, ensure_ascii=False))]
 
 
 # ============================================================================
 # MAIN
 # ============================================================================
 
+
 async def main():
     """Entry point principale del server MCP."""
     async with stdio_server() as (read_stream, write_stream):
-        await server.run(
-            read_stream,
-            write_stream,
-            server.create_initialization_options()
-        )
+        await server.run(read_stream, write_stream, server.create_initialization_options())
 
 
 def run():
     """Funzione wrapper per entry point."""
     import asyncio
+
     asyncio.run(main())
 
 

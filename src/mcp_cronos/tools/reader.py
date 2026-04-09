@@ -80,43 +80,48 @@ def leggi_diario(
             if diary:
                 entries_data = []
                 for entry in diary.entries:
-                    entries_data.append({
-                        "progetto": entry.progetto,
-                        "descrizione": entry.descrizione,
-                        "richiesto_da": entry.richiesto_da,
-                        "contenuto_preview": entry.contenuto[:200] + "..." if len(entry.contenuto) > 200 else entry.contenuto,
-                        "riferimenti": entry.riferimenti
-                    })
+                    entries_data.append(
+                        {
+                            "progetto": entry.progetto,
+                            "descrizione": entry.descrizione,
+                            "richiesto_da": entry.richiesto_da,
+                            "contenuto_preview": entry.contenuto[:200] + "..."
+                            if len(entry.contenuto) > 200
+                            else entry.contenuto,
+                            "riferimenti": entry.riferimenti,
+                        }
+                    )
 
-                risultati.append({
-                    "data": str(d),
-                    "file": str(file_path),
-                    "titolo": diary.titolo,
-                    "entries": entries_data,
-                    "num_entries": len(diary.entries),
-                    "bloccanti": diary.bloccanti
-                })
+                risultati.append(
+                    {
+                        "data": str(d),
+                        "file": str(file_path),
+                        "titolo": diary.titolo,
+                        "entries": entries_data,
+                        "num_entries": len(diary.entries),
+                        "bloccanti": diary.bloccanti,
+                    }
+                )
         else:
             files_mancanti += 1
-            risultati.append({
-                "data": str(d),
-                "file": str(file_path),
-                "esiste": False,
-                "messaggio": "File non trovato"
-            })
+            risultati.append(
+                {
+                    "data": str(d),
+                    "file": str(file_path),
+                    "esiste": False,
+                    "messaggio": "File non trovato",
+                }
+            )
 
     # Riepilogo
     return {
         "periodo": {
             "da": str(dates_to_read[0]),
             "a": str(dates_to_read[-1]),
-            "giorni_totali": len(dates_to_read)
+            "giorni_totali": len(dates_to_read),
         },
-        "riepilogo": {
-            "files_trovati": files_trovati,
-            "files_mancanti": files_mancanti
-        },
-        "giorni": risultati
+        "riepilogo": {"files_trovati": files_trovati, "files_mancanti": files_mancanti},
+        "giorni": risultati,
     }
 
 
@@ -173,27 +178,15 @@ def lista_progetti(
                 progetti_date[proj].append(str(d))
 
     # Ordina per frequenza
-    progetti_ordinati = sorted(
-        progetti_count.items(),
-        key=lambda x: x[1],
-        reverse=True
-    )
+    progetti_ordinati = sorted(progetti_count.items(), key=lambda x: x[1], reverse=True)
 
     # Formatta risultato
     progetti_dettaglio = []
     for proj, count in progetti_ordinati:
-        progetti_dettaglio.append({
-            "nome": proj,
-            "occorrenze": count,
-            "date": progetti_date[proj]
-        })
+        progetti_dettaglio.append({"nome": proj, "occorrenze": count, "date": progetti_date[proj]})
 
     return {
-        "periodo": {
-            "da": str(start),
-            "a": str(end),
-            "giorni_analizzati": len(dates_to_read)
-        },
+        "periodo": {"da": str(start), "a": str(end), "giorni_analizzati": len(dates_to_read)},
         "totale_progetti": len(progetti_count),
-        "progetti": progetti_dettaglio
+        "progetti": progetti_dettaglio,
     }

@@ -29,37 +29,49 @@ uv run ruff check src/mcp_cronos/
 
 ```
 src/mcp_cronos/
-  __init__.py         # Package entry point, version
-  server.py           # MCP server, tool definitions and dispatch (11 tools)
-  config.py           # Configuration: CRONOS_DIARIO_PATH env variable
-  templates.py        # Dataclasses (Entry, Riferimento, DiarioGiornaliero), markdown templates
+  __init__.py           # Package entry point, version
+  server.py             # MCP server, tool definitions and dispatch (11 tools)
+  config.py             # Configuration: TOML loading, CronosConfig singleton
+  i18n.py               # Language packs (Italian, English), LanguagePack dataclass
+  template_loader.py    # LLM template loading with user override support
+  templates.py          # Dataclasses (Entry, Riferimento, DiarioGiornaliero), markdown generation
+  default_templates/    # Built-in LLM prompt templates
+    fine_giornata.md    # End-of-day style instructions
+    standup.md          # Standup message style instructions
+    consolida.md        # Consolidation style instructions
   tools/
-    entries.py        # cronos_aggiungi_entry, cronos_imposta_bloccanti
-    reader.py         # cronos_leggi_diario, cronos_lista_progetti
-    standup.py        # cronos_riassunto_standup
-    fine_giornata.py  # cronos_fine_giornata (end-of-day with LLM instructions)
-    scrivi_fine_giornata.py  # cronos_scrivi_fine_giornata (writes the generated file)
-    consolida.py      # cronos_consolida_diario
-    cerca.py          # cronos_cerca (full-text search with regex)
-    settimana.py      # cronos_settimana (weekly summary by project)
+    entries.py          # cronos_aggiungi_entry, cronos_imposta_bloccanti
+    reader.py           # cronos_leggi_diario, cronos_lista_progetti
+    standup.py          # cronos_riassunto_standup
+    fine_giornata.py    # cronos_fine_giornata (end-of-day with LLM instructions)
+    scrivi_fine_giornata.py  # cronos_scrivi_fine_giornata (write + git commit/push)
+    consolida.py        # cronos_consolida_diario
+    cerca.py            # cronos_cerca (full-text search with regex)
+    settimana.py        # cronos_settimana (weekly summary by project)
     aggiungi_progetto.py  # cronos_aggiungi_a_progetto (append to existing entry)
   utils/
-    dates.py          # Date parsing, file path calculation, standup title generation
-    markdown.py       # Diary file parsing, entry extraction, markdown rendering
+    dates.py            # Date parsing, file path calculation, standup title (i18n-aware)
+    markdown.py         # Diary file parsing, entry extraction, markdown rendering
 ```
 
 **Design pattern**: the server is synchronous (no async tool logic). Tools read/write markdown files directly via pathlib. Tools that require LLM reasoning (fine_giornata, consolida, standup) return raw data + style instructions — the LLM generates the output.
 
+**Configuration system**:
+- `CRONOS_DIARIO_PATH` (env var, mandatory): path to diary root directory
+- `CRONOS_CONFIG_PATH` (env var, optional): explicit path to config file
+- `cronos.toml` (searched in diary root or `~/.config/cronos/`): language, section names, git settings, template overrides
+- Priority: user config > language defaults > Italian defaults
+
+**i18n**: built-in Italian (default) and English. Section names, month/weekday names, temporal strings, and blockers default are all language-aware. LLM templates use `{section_*}` placeholders resolved at runtime.
+
 **Tool workflow**:
 - Daily entries: `cronos_aggiungi_entry` / `cronos_aggiungi_a_progetto` (append to existing)
 - Reading: `cronos_leggi_diario` / `cronos_cerca` / `cronos_lista_progetti` / `cronos_settimana`
-- End of day: `cronos_fine_giornata` -> LLM generates content -> `cronos_scrivi_fine_giornata`
+- End of day: `cronos_fine_giornata` -> LLM generates content -> `cronos_scrivi_fine_giornata` (+ git commit/push)
 - Consolidation: `cronos_consolida_diario` -> LLM rewrites -> file write
 - Standup: `cronos_riassunto_standup` -> LLM generates message
 
 **Diary file structure**: `{CRONOS_DIARIO_PATH}/{year}/{month}/{year}-{month}-{day}.md`
-
-**Configuration**: single env variable `CRONOS_DIARIO_PATH` (mandatory), pointing to the diary root directory.
 
 ## Agent Rules
 
@@ -164,7 +176,7 @@ Scope: module name (e.g. `server`, `entries`, `reader`, `standup`, `fine_giornat
 
 ### Diary File Format
 
-Files follow this markdown structure:
+Section names are configurable via `cronos.toml` and i18n. Default (Italian):
 
 ```markdown
 # Per lo Stand-up {Day+1} {Month} {Year}
@@ -190,7 +202,14 @@ Files follow this markdown structure:
 Nessuno
 ```
 
-The title uses the next day's date (standup convention). Months are in Italian. Entries are separated by `---`. The `## Bloccanti` section is always at the end.
+The title uses the next day's date (standup convention). Months and section names follow the configured language. Entries are separated by `---`. The blockers section is always at the end.
+
+### Adding a New Language
+
+1. Add a `LanguagePack` entry in `i18n.py` `LANGUAGES` dict
+2. Provide: months, weekdays, title_prefix, date_format, sections, blockers_default, temporal
+3. Add tests in `tests/test_i18n.py`
+4. Update README.md
 
 ### End-of-Day Workflow
 
@@ -204,8 +223,6 @@ After writing the end-of-day file, commit and push the diary changes.
 
 ## Known Limitations
 
-- **No tests yet**: the `tests/` directory does not exist. Tests need to be created.
 - **Synchronous I/O**: all file operations are synchronous (pathlib read/write). Acceptable for single-user local diary.
 - **No file locking**: concurrent writes to the same diary file could conflict. Not an issue for single-user use.
 - **Tool dispatch is manual**: `call_tool()` uses if/elif chains instead of a registry. Acceptable for 11 tools.
-- **README.md is outdated**: lists only 5 tools but the server exposes 11.

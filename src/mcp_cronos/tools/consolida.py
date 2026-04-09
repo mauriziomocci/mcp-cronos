@@ -93,6 +93,7 @@ def consolida_diario(
 
     # Conta occorrenze per progetto per identificare duplicati
     from collections import Counter
+
     progetto_count = Counter(progetti)
     duplicati = {p: c for p, c in progetto_count.items() if c > 1}
 
@@ -136,8 +137,15 @@ def _genera_suggerimenti(duplicati: dict, num_sezioni: int, sezioni: list) -> li
         )
 
     # Cerca pattern di entry incrementali (analisi, approfondimento, verifica)
-    incrementali = ["approfondimento", "verifica", "aggiornamento", "follow-up",
-                     "correzione", "conferma", "dettaglio"]
+    incrementali = [
+        "approfondimento",
+        "verifica",
+        "aggiornamento",
+        "follow-up",
+        "correzione",
+        "conferma",
+        "dettaglio",
+    ]
     for sez in sezioni:
         sez_lower = sez.lower()
         for pattern in incrementali:

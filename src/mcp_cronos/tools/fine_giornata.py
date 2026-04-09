@@ -70,7 +70,7 @@ def fine_giornata(
         return {
             "errore": f"File non trovato per data {file_date}",
             "file": str(file_path),
-            "suggerimento": "Usa cronos_aggiungi_entry per creare il file e aggiungere entry durante la giornata"
+            "suggerimento": "Usa cronos_aggiungi_entry per creare il file e aggiungere entry durante la giornata",
         }
 
     diary = parse_diary_file(file_path)
@@ -108,7 +108,7 @@ def fine_giornata(
                 progetti.append(progetto)
         if stripped == blockers_header:
             idx = contenuto_grezzo.index(blockers_header)
-            bloccanti_text = contenuto_grezzo[idx + len(blockers_header):].strip()
+            bloccanti_text = contenuto_grezzo[idx + len(blockers_header) :].strip()
             next_h2 = bloccanti_text.find("\n## ")
             if next_h2 > 0:
                 bloccanti_text = bloccanti_text[:next_h2].strip()
@@ -167,7 +167,11 @@ def _consolida_entries(entries) -> list[dict]:
                 esistente["descrizione"] += f" / {entry.descrizione}"
 
             # Aggiungi contenuto come sotto-sezione
-            separatore = f"\n\n--- entry successiva: {entry.descrizione} ---\n\n" if entry.descrizione else "\n\n"
+            separatore = (
+                f"\n\n--- entry successiva: {entry.descrizione} ---\n\n"
+                if entry.descrizione
+                else "\n\n"
+            )
             esistente["contenuto_completo"] += separatore + entry.contenuto
 
             # Preserva richiesto_da se non già presente

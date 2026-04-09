@@ -19,6 +19,7 @@ from mcp_cronos.config import load_config
 @dataclass
 class DiaryEntry:
     """Rappresenta una singola entry del diario."""
+
     progetto: str
     descrizione: str
     contenuto: str
@@ -29,6 +30,7 @@ class DiaryEntry:
 @dataclass
 class DiaryFile:
     """Rappresenta un file del diario completo."""
+
     titolo: str
     entries: list[DiaryEntry]
     bloccanti: str
@@ -89,13 +91,13 @@ def parse_diary_content(content: str) -> DiaryFile:
     # Parsa entries
     if cosa_fatto_idx >= 0:
         end_idx = bloccanti_idx if bloccanti_idx > cosa_fatto_idx else len(lines)
-        entries_content = "\n".join(lines[cosa_fatto_idx + 1:end_idx])
+        entries_content = "\n".join(lines[cosa_fatto_idx + 1 : end_idx])
         entries = parse_entries(entries_content)
 
     # Parsa bloccanti
     if bloccanti_idx >= 0:
         bloccanti_lines = []
-        for line in lines[bloccanti_idx + 1:]:
+        for line in lines[bloccanti_idx + 1 :]:
             if line.startswith("## "):
                 break
             bloccanti_lines.append(line)
@@ -121,11 +123,19 @@ def parse_entries(content: str) -> list[DiaryEntry]:
     """
     # Sezioni che vanno raggruppate nella entry precedente
     SPECIAL_SECTIONS = {
-        "causa del bug", "cause del bug",
-        "fix applicato", "soluzione", "soluzione applicata",
-        "deploy in produzione", "deploy", "deployment",
-        "implementazione", "testing", "test",
-        "modifiche", "changes",
+        "causa del bug",
+        "cause del bug",
+        "fix applicato",
+        "soluzione",
+        "soluzione applicata",
+        "deploy in produzione",
+        "deploy",
+        "deployment",
+        "implementazione",
+        "testing",
+        "test",
+        "modifiche",
+        "changes",
     }
 
     entries = []
@@ -150,7 +160,7 @@ def parse_entries(content: str) -> list[DiaryEntry]:
 
         # Controlla se è una sezione speciale
         # Rimuovi versioni tra parentesi per il check (es. "Deploy (v1.2.3)" -> "Deploy")
-        progetto_clean = re.sub(r'\s*\([^)]*\)', '', progetto).lower().strip()
+        progetto_clean = re.sub(r"\s*\([^)]*\)", "", progetto).lower().strip()
         is_special = progetto_clean in SPECIAL_SECTIONS
 
         # Resto del contenuto
@@ -182,20 +192,22 @@ def parse_entries(content: str) -> list[DiaryEntry]:
                 descrizione=prev_entry.descrizione,
                 contenuto=prev_entry.contenuto + section_content,
                 richiesto_da=prev_entry.richiesto_da,
-                riferimenti=prev_entry.riferimenti
+                riferimenti=prev_entry.riferimenti,
             )
         else:
             # Entry normale
             # Estrai riferimenti
             riferimenti = extract_references(contenuto)
 
-            entries.append(DiaryEntry(
-                progetto=progetto.strip(),
-                descrizione=descrizione.strip(),
-                contenuto=contenuto,
-                richiesto_da=richiesto_da,
-                riferimenti=riferimenti
-            ))
+            entries.append(
+                DiaryEntry(
+                    progetto=progetto.strip(),
+                    descrizione=descrizione.strip(),
+                    contenuto=contenuto,
+                    richiesto_da=richiesto_da,
+                    riferimenti=riferimenti,
+                )
+            )
 
     return entries
 

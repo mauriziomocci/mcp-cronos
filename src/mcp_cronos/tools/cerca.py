@@ -82,14 +82,16 @@ def cerca_nel_diario(
                 else:
                     contesto = ""
 
-                risultati.append({
-                    "data": str(d),
-                    "progetto": entry.progetto,
-                    "descrizione": entry.descrizione,
-                    "num_match": len(matches),
-                    "contesto": contesto,
-                    "richiesto_da": entry.richiesto_da,
-                })
+                risultati.append(
+                    {
+                        "data": str(d),
+                        "progetto": entry.progetto,
+                        "descrizione": entry.descrizione,
+                        "num_match": len(matches),
+                        "contesto": contesto,
+                        "richiesto_da": entry.richiesto_da,
+                    }
+                )
 
     return {
         "query": query,
