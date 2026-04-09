@@ -1,73 +1,42 @@
 """
-Tool per il consolidamento del diario.
+Tool for diary consolidation.
 
-Rilegge il file del diario, identifica le sezioni logiche e restituisce
-il contenuto completo con istruzioni per l'LLM su come riscriverlo
-eliminando ripetizioni, unificando entry che trattano lo stesso argomento,
-e organizzando il tutto in modo coerente e logico.
+Re-reads the diary file, identifies logical sections, and returns the full
+content with LLM instructions on how to rewrite it -- removing repetitions,
+merging entries that cover the same topic, and organising everything into
+a coherent logical structure.
 
-Utile quando il diario e' stato scritto durante la giornata con entry
-separate che andrebbero unificate, o quando contiene ripetizioni dovute
-ad aggiornamenti successivi sullo stesso tema.
+Useful when the diary was written during the day with separate entries that
+should be unified, or when it contains repetitions from successive updates
+on the same topic.
 """
 
 from typing import Optional
 
-from mcp_cronos.utils.dates import get_file_path, get_today, parse_date, get_standup_title
+from mcp_cronos.config import load_config
+from mcp_cronos.template_loader import load_template
+from mcp_cronos.utils.dates import get_file_path, get_standup_title, get_today, parse_date
 
 
-STILE_CONSOLIDAMENTO = """
-ISTRUZIONI PER IL CONSOLIDAMENTO DEL DIARIO:
+def _get_style_instructions() -> str:
+    """Load the consolidation template and replace section placeholders with config values.
 
-Hai ricevuto il contenuto completo del diario di oggi. Il file potrebbe contenere:
-- Entry separate che trattano lo stesso argomento (es. analisi iniziale + approfondimento + verifica)
-- Ripetizioni di dati e conclusioni tra entry diverse
-- Informazioni sparse che andrebbero raggruppate
-- Sezioni aggiunte in momenti diversi senza coerenza complessiva
-
-Il tuo compito e' riscrivere il file consolidando tutto in modo coerente.
-
-=== REGOLE DI CONSOLIDAMENTO ===
-
-1. RAGGRUPPA PER PROGETTO E TEMA: entry diverse sullo stesso argomento vanno fuse in una
-   singola sezione. Ad esempio, "analisi ticket X", "approfondimento ticket X",
-   "verifica evidenze ticket X" diventano un'unica sezione "Ticket X" con la storia
-   completa dall'inizio alla fine.
-
-2. ELIMINA RIPETIZIONI: se lo stesso dato, conclusione o evidenza appare in piu' entry,
-   tienilo una sola volta nel punto piu' logico.
-
-3. MANTIENI TUTTI I DATI: non perdere informazioni. Se un'entry contiene un URL, un ID,
-   una query, un riferimento tecnico, deve restare nel file consolidato.
-
-4. ORDINE CRONOLOGICO E LOGICO: organizza le sezioni seguendo il flusso della giornata.
-   Dentro ogni sezione, racconta la storia dall'inizio alla fine, non in ordine di
-   quando le entry sono state scritte.
-
-5. FORMATO:
-   - Un H3 (###) per ogni progetto/tema principale
-   - Testo discorsivo, non elenchi puntati infiniti
-   - Sezioni "Dove verificare" con URL e query raggruppate alla fine della sezione
-   - Riferimenti (repository, branch, Jira, MR) alla fine della sezione
-   - Separatore --- tra sezioni di progetti diversi
-
-6. NON AGGIUNGERE CONTENUTO: non inventare, non interpretare, non aggiungere
-   conclusioni che non erano nel diario originale. Solo riorganizzare.
-
-7. PRESERVA LE SEZIONI DI CHIUSURA: se il diario ha gia' un "Riassunto della giornata",
-   "Riassunto tecnico", "Messaggio per lo standup", lasciali invariati.
-   Se non li ha, non aggiungerli (per quelli c'e' il tool di fine giornata).
-
-8. SEZIONE BLOCCANTI: mantienila sempre alla fine.
-
-=== PROCEDURA ===
-
-1. Leggi tutto il contenuto
-2. Identifica i temi/progetti trattati
-3. Per ogni tema, raccogli tutte le informazioni sparse nel file
-4. Riscrivi ogni tema come una sezione unica, coerente e completa
-5. Scrivi il file consolidato al path indicato nel campo `file`
-""".strip()
+    Uses manual string replacement instead of str.format() because the template
+    may contain other brace-delimited text that must not be expanded.
+    """
+    config = load_config()
+    template = load_template("consolida")
+    replacements = {
+        "{section_entries}": config.section_entries,
+        "{section_blockers}": config.section_blockers,
+        "{section_day_summary}": config.section_day_summary,
+        "{section_tech_summary}": config.section_tech_summary,
+        "{section_standup_message}": config.section_standup_message,
+    }
+    result = template
+    for placeholder, value in replacements.items():
+        result = result.replace(placeholder, value)
+    return result
 
 
 def consolida_diario(
@@ -112,8 +81,8 @@ def consolida_diario(
 
     # Analisi del contenuto per identificare potenziali problemi
     lines = contenuto.split("\n")
-    h3_sections = [l.strip() for l in lines if l.strip().startswith("### ")]
-    h2_sections = [l.strip() for l in lines if l.strip().startswith("## ")]
+    h3_sections = [ln.strip() for ln in lines if ln.strip().startswith("### ")]
+    h2_sections = [ln.strip() for ln in lines if ln.strip().startswith("## ")]
 
     # Identifica progetti dai titoli H3
     progetti = []
@@ -132,7 +101,7 @@ def consolida_diario(
     num_sezioni_h3 = len(h3_sections)
 
     return {
-        "istruzioni": STILE_CONSOLIDAMENTO,
+        "istruzioni": _get_style_instructions(),
         "data": str(file_date),
         "file": str(file_path),
         "titolo_standup": get_standup_title(file_date),

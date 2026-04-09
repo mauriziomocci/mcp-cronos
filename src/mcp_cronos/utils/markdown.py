@@ -13,6 +13,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Optional
 
+from mcp_cronos.config import load_config
+
 
 @dataclass
 class DiaryEntry:
@@ -59,6 +61,7 @@ def parse_diary_content(content: str) -> DiaryFile:
     Returns:
         DiaryFile con i dati parsati
     """
+    config = load_config()
     lines = content.split("\n")
 
     # Estrai titolo
@@ -68,9 +71,9 @@ def parse_diary_content(content: str) -> DiaryFile:
             titolo = line[2:].strip()
             break
 
-    # Trova sezione "Cosa ho fatto ieri" e "Bloccanti"
+    # Trova sezione entries e blockers usando i nomi configurati
     entries = []
-    bloccanti = "Nessuno"
+    bloccanti = config.blockers_default
 
     # Trova indici delle sezioni
     cosa_fatto_idx = -1
@@ -78,9 +81,9 @@ def parse_diary_content(content: str) -> DiaryFile:
 
     for i, line in enumerate(lines):
         stripped = line.strip()
-        if stripped.startswith("## Cosa ho fatto"):
+        if stripped.startswith(f"## {config.section_entries}"):
             cosa_fatto_idx = i
-        elif stripped == "## Bloccanti":
+        elif stripped == f"## {config.section_blockers}":
             bloccanti_idx = i
 
     # Parsa entries
@@ -283,8 +286,9 @@ def render_diary_file(diary: DiaryFile) -> str:
     lines.append(f"# {diary.titolo}")
     lines.append("")
 
-    # Sezione "Cosa ho fatto ieri"
-    lines.append("## Cosa ho fatto ieri")
+    # Section names from config
+    config = load_config()
+    lines.append(f"## {config.section_entries}")
     lines.append("")
 
     # Entries
@@ -294,8 +298,8 @@ def render_diary_file(diary: DiaryFile) -> str:
         lines.append("---")
         lines.append("")
 
-    # Sezione Bloccanti
-    lines.append("## Bloccanti")
+    # Blockers section
+    lines.append(f"## {config.section_blockers}")
     lines.append("")
     lines.append(diary.bloccanti)
     lines.append("")

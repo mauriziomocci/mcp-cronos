@@ -8,7 +8,7 @@ quanti giorni si e' lavorato su ciascuno e un riepilogo delle attivita'.
 from datetime import timedelta
 from typing import Optional
 
-from mcp_cronos.utils.dates import get_file_path, get_today, parse_date, get_date_range
+from mcp_cronos.utils.dates import get_date_range, get_file_path, get_today, parse_date
 from mcp_cronos.utils.markdown import parse_diary_file
 
 

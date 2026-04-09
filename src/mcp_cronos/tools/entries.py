@@ -1,19 +1,23 @@
 """
-Tool per la gestione delle entry del diario.
+Tool for managing diary entries.
 
-Funzioni:
-- aggiungi_entry: Aggiunge una nuova entry al diario
-- imposta_bloccanti: Imposta o aggiorna la sezione bloccanti
+Functions:
+- aggiungi_entry: Add a new entry to the diary
+- imposta_bloccanti: Set or update the blockers section
 """
 
 import re
-from datetime import date
-from pathlib import Path
 from typing import Optional
 
-from mcp_cronos.config import get_diario_path
-from mcp_cronos.utils.dates import get_file_path, get_today, parse_date, ensure_directory_exists, get_standup_title
+from mcp_cronos.config import load_config
 from mcp_cronos.templates import Entry, Riferimento, crea_template_vuoto
+from mcp_cronos.utils.dates import (
+    ensure_directory_exists,
+    get_file_path,
+    get_standup_title,
+    get_today,
+    parse_date,
+)
 
 
 def aggiungi_entry(
@@ -134,26 +138,32 @@ def _insert_entry_in_content(content: str, entry: Entry) -> str:
     Returns:
         Contenuto aggiornato
     """
-    # Trova la posizione della sezione Bloccanti
-    bloccanti_match = re.search(r"\n## Bloccanti\n", content)
+    config = load_config()
+    bloccanti_pattern = f"\n## {re.escape(config.section_blockers)}\n"
+
+    # Find the position of the blockers section
+    bloccanti_match = re.search(bloccanti_pattern, content)
 
     if bloccanti_match:
-        # Inserisci prima di "## Bloccanti"
+        # Insert before the blockers section
         insert_pos = bloccanti_match.start()
 
-        # Genera markdown dell'entry
+        # Generate entry markdown
         entry_md = entry.to_markdown()
 
-        # Inserisci con separatore
+        # Insert with separator
         new_content = (
             content[:insert_pos] +
             "\n" + entry_md + "\n\n---\n" +
             content[insert_pos:]
         )
     else:
-        # Se non c'e' sezione Bloccanti, aggiungi alla fine
+        # No blockers section found -- append at end and add one
         entry_md = entry.to_markdown()
-        new_content = content.rstrip() + "\n\n" + entry_md + "\n\n---\n\n## Bloccanti\n\nNessuno\n"
+        new_content = (
+            content.rstrip() + "\n\n" + entry_md + "\n\n---\n\n"
+            f"## {config.section_blockers}\n\n{config.blockers_default}\n"
+        )
 
     return new_content
 
@@ -193,16 +203,17 @@ def imposta_bloccanti(
     # Leggi il contenuto
     content = file_path.read_text(encoding="utf-8")
 
-    # Aggiorna la sezione Bloccanti
-    # Pattern: ## Bloccanti\n\n{testo fino alla fine o prossima sezione ##}
-    pattern = r"(## Bloccanti\n\n).*?(?=\n## |\Z)"
+    # Update the blockers section using the configured section name
+    config = load_config()
+    escaped_section = re.escape(config.section_blockers)
+    pattern = rf"(## {escaped_section}\n\n).*?(?=\n## |\Z)"
     replacement = f"\\1{bloccanti}\n"
 
     new_content, count = re.subn(pattern, replacement, content, flags=re.DOTALL)
 
     if count == 0:
-        # Se non c'e' sezione Bloccanti, aggiungila
-        new_content = content.rstrip() + f"\n\n## Bloccanti\n\n{bloccanti}\n"
+        # No blockers section found -- append one
+        new_content = content.rstrip() + f"\n\n## {config.section_blockers}\n\n{bloccanti}\n"
 
     # Scrivi il file
     file_path.write_text(new_content, encoding="utf-8")

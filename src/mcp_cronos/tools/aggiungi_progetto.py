@@ -1,16 +1,17 @@
 """
-Tool per aggiungere contenuto a un'entry di progetto esistente.
+Tool for appending content to an existing project entry.
 
-Se nel diario di oggi esiste gia' un'entry per lo stesso progetto,
-aggiunge una sotto-sezione (H4) invece di creare un'entry nuova.
-Se non esiste, crea una nuova entry standard.
+If a diary entry for the same project already exists today, appends an H4
+sub-section instead of creating a new entry. If none exists, creates a new
+standard entry.
 """
 
 import re
 from typing import Optional
 
-from mcp_cronos.utils.dates import get_file_path, get_today, parse_date, ensure_directory_exists
+from mcp_cronos.config import load_config
 from mcp_cronos.templates import crea_template_vuoto
+from mcp_cronos.utils.dates import ensure_directory_exists, get_file_path, get_today, parse_date
 
 
 def aggiungi_a_progetto(
@@ -113,13 +114,15 @@ def _build_riferimenti_lines(repository, branch, jira_ticket, jira_url, gitlab_m
 
 def _aggiungi_fase(file_path, file_content, match, progetto, titolo_fase, contenuto, richiesto_da, riferimenti_lines):
     """Aggiunge una sotto-sezione H4 a un'entry esistente."""
-    # Trova la fine dell'entry corrente
+    # Find the end of the current entry
+    config = load_config()
+    escaped_blockers = re.escape(config.section_blockers)
     rest = file_content[match.end():]
-    end_pattern = re.search(r"\n(?=### |\n## Bloccanti)", rest)
+    end_pattern = re.search(rf"\n(?=### |\n## {escaped_blockers})", rest)
     if end_pattern:
         insert_pos = match.end() + end_pattern.start()
     else:
-        bloccanti_match = re.search(r"\n## Bloccanti", file_content)
+        bloccanti_match = re.search(rf"\n## {escaped_blockers}", file_content)
         if bloccanti_match:
             insert_pos = bloccanti_match.start()
         else:
@@ -167,7 +170,9 @@ def _crea_nuova_entry(file_path, file_date, progetto, titolo_fase, contenuto, ri
     else:
         file_content = crea_template_vuoto(file_date)
 
-    bloccanti_match = re.search(r"\n## Bloccanti\n", file_content)
+    config = load_config()
+    escaped_blockers = re.escape(config.section_blockers)
+    bloccanti_match = re.search(rf"\n## {escaped_blockers}\n", file_content)
     if bloccanti_match:
         insert_pos = bloccanti_match.start()
         new_content = (
@@ -176,7 +181,10 @@ def _crea_nuova_entry(file_path, file_date, progetto, titolo_fase, contenuto, ri
             file_content[insert_pos:]
         )
     else:
-        new_content = file_content.rstrip() + "\n\n" + entry_md + "\n\n---\n\n## Bloccanti\n\nNessuno\n"
+        new_content = (
+            file_content.rstrip() + "\n\n" + entry_md + "\n\n---\n\n"
+            f"## {config.section_blockers}\n\n{config.blockers_default}\n"
+        )
 
     file_path.write_text(new_content, encoding="utf-8")
 

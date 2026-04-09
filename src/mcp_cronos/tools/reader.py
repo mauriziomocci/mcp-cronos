@@ -6,18 +6,16 @@ Funzioni:
 - lista_progetti: Elenca i progetti menzionati in un periodo
 """
 
-from datetime import date, timedelta
-from pathlib import Path
+from datetime import timedelta
 from typing import Optional
 
-from mcp_cronos.config import get_diario_path
 from mcp_cronos.utils.dates import (
+    get_date_range,
     get_file_path,
     get_today,
     parse_date,
-    get_date_range,
 )
-from mcp_cronos.utils.markdown import parse_diary_file, extract_projects
+from mcp_cronos.utils.markdown import extract_projects, parse_diary_file
 
 
 def leggi_diario(

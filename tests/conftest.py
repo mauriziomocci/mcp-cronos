@@ -10,6 +10,16 @@ from pathlib import Path
 
 import pytest
 
+from mcp_cronos.config import _reset_config
+
+
+@pytest.fixture(autouse=True)
+def _clean_config():
+    """Reset the config singleton before and after every test."""
+    _reset_config()
+    yield
+    _reset_config()
+
 
 @pytest.fixture
 def tmp_diario(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
@@ -30,7 +40,10 @@ def tmp_diario(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
 @pytest.fixture
 def sample_diary_it(tmp_diario: Path) -> Path:
     """
-    Create a sample Italian diary file at 2026/04/2026-04-09.md inside tmp_diario.
+    Create a sample Italian diary file at 2026/04/2026-04-09.md with proper format.
+
+    The file uses the standard diary structure with H1 title, entries section,
+    H3 project entries, and blockers section.
 
     Returns the path to the created diary file.
     """
@@ -38,10 +51,20 @@ def sample_diary_it(tmp_diario: Path) -> Path:
     month_dir.mkdir(parents=True, exist_ok=True)
     diary_file = month_dir / "2026-04-09.md"
     diary_file.write_text(
-        "# Diario 2026-04-09\n\n"
-        "## Fatto\n- Task completata\n\n"
-        "## Bloccanti\n- Nessuno\n\n"
-        "## Domani\n- Continuare il lavoro\n",
+        "# Per lo Stand-up - 10 Aprile 2026\n\n"
+        "## Cosa ho fatto ieri\n\n"
+        "### MCP Cronos - Refactoring config system\n\n"
+        "Migrated all hardcoded strings to config.\n\n"
+        "---\n\n"
+        "### SmarTicket - Fix login bug\n\n"
+        "*-Richiesto da Marco-*\n\n"
+        "Fixed authentication timeout.\n\n"
+        "**Riferimenti:**\n"
+        "- Repository: smarticket-backend\n"
+        "- Branch: `fix/login-timeout`\n\n"
+        "---\n\n"
+        "## Bloccanti\n\n"
+        "Nessuno\n",
         encoding="utf-8",
     )
     return diary_file
@@ -50,7 +73,7 @@ def sample_diary_it(tmp_diario: Path) -> Path:
 @pytest.fixture
 def sample_diary_en(tmp_diario: Path) -> Path:
     """
-    Create a sample English diary file at 2026/04/2026-04-09.md inside tmp_diario.
+    Create a sample English diary file at 2026/04/2026-04-09.md with proper format.
 
     Returns the path to the created diary file.
     """
@@ -58,10 +81,13 @@ def sample_diary_en(tmp_diario: Path) -> Path:
     month_dir.mkdir(parents=True, exist_ok=True)
     diary_file = month_dir / "2026-04-09.md"
     diary_file.write_text(
-        "# Diary 2026-04-09\n\n"
-        "## Done\n- Completed task\n\n"
-        "## Blockers\n- None\n\n"
-        "## Tomorrow\n- Continue the work\n",
+        "# For Stand-up - April 10, 2026\n\n"
+        "## What I did yesterday\n\n"
+        "### MCP Cronos - Config refactoring\n\n"
+        "Migrated all hardcoded strings to config.\n\n"
+        "---\n\n"
+        "## Blockers\n\n"
+        "None\n",
         encoding="utf-8",
     )
     return diary_file
