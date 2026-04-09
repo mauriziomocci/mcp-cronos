@@ -5,7 +5,6 @@ from mcp_cronos.utils.dates import (
     get_standup_title,
     get_file_path,
     parse_date,
-    MESI_ITALIANI,
 )
 from mcp_cronos.utils.markdown import (
     parse_diary_file,
@@ -18,7 +17,6 @@ __all__ = [
     "get_standup_title",
     "get_file_path",
     "parse_date",
-    "MESI_ITALIANI",
     "parse_diary_file",
     "render_entry",
     "extract_projects",

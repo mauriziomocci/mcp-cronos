@@ -3,23 +3,15 @@ Utility per la gestione delle date nel diario.
 
 Le date nel diario seguono queste convenzioni:
 - File: {anno}/{mese}/{anno}-{mese}-{giorno}.md (es. 2026/01/2026-01-21.md)
-- Titolo: "Per lo Stand-up {Giorno+1} {Mese} {Anno}" (es. "Per lo Stand-up 22 Gennaio 2026")
-- I mesi sono in italiano
+- Titolo: format_title() from the active language pack (es. "Per lo Stand-up - 22 Gennaio 2026")
 """
 
 from datetime import date, datetime, timedelta
 from pathlib import Path
 from typing import Optional
 
-from mcp_cronos.config import get_diario_path
-
-
-# Mesi in italiano
-MESI_ITALIANI = [
-    "Gennaio", "Febbraio", "Marzo", "Aprile",
-    "Maggio", "Giugno", "Luglio", "Agosto",
-    "Settembre", "Ottobre", "Novembre", "Dicembre"
-]
+from mcp_cronos.config import get_diario_path, load_config
+from mcp_cronos.i18n import get_language_pack
 
 
 def get_today() -> date:
@@ -61,32 +53,40 @@ def get_standup_date(file_date: date) -> date:
 
 def format_standup_date(standup_date: date) -> str:
     """
-    Formatta la data dello stand-up in italiano.
+    Format the standup date using the language pack from the active config.
+
+    Delegates to LanguagePack.format_date so that the output respects the
+    configured locale (e.g. "22 Gennaio 2026" for Italian, "January 22, 2026"
+    for English) without any hardcoded month names in this module.
 
     Args:
-        standup_date: Data dello stand-up
+        standup_date: Date of the standup
 
     Returns:
-        Stringa formattata (es. "22 Gennaio 2026")
+        Locale-formatted date string.
     """
-    giorno = standup_date.day
-    mese = MESI_ITALIANI[standup_date.month - 1]
-    anno = standup_date.year
-    return f"{giorno} {mese} {anno}"
+    config = load_config()
+    pack = get_language_pack(config.lang)
+    return pack.format_date(standup_date)
 
 
 def get_standup_title(file_date: date) -> str:
     """
-    Genera il titolo per lo stand-up.
+    Generate the standup title for the given diary file date.
+
+    Uses the language pack from the active config so that both the prefix and
+    date format honour the configured locale.
 
     Args:
-        file_date: Data del file del diario
+        file_date: Date of the diary file
 
     Returns:
-        Titolo formattato (es. "Per lo Stand-up 22 Gennaio 2026")
+        Full standup title (e.g. "Per lo Stand-up - 22 Gennaio 2026").
     """
+    config = load_config()
+    pack = get_language_pack(config.lang)
     standup_date = get_standup_date(file_date)
-    return f"Per lo Stand-up {format_standup_date(standup_date)}"
+    return pack.format_title(standup_date)
 
 
 def get_file_path(file_date: date, diario_path: Optional[Path] = None) -> Path:
