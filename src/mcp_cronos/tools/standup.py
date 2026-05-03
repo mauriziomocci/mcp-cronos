@@ -12,7 +12,14 @@ from typing import Optional
 from mcp_cronos.config import load_config
 from mcp_cronos.i18n import get_language_pack
 from mcp_cronos.template_loader import load_template
-from mcp_cronos.utils.dates import get_date_range, get_file_path, get_today, parse_date
+from mcp_cronos.utils.dates import (
+    get_date_range,
+    get_file_path,
+    get_fine_giornata_path,
+    get_today,
+    has_legacy_file,
+    parse_date,
+)
 from mcp_cronos.utils.markdown import parse_diary_file
 
 
@@ -95,7 +102,12 @@ def genera_riassunto_standup(
     # Determina il contesto temporale per il riassunto
     contesto = _determina_contesto_temporale(dates_to_read, today)
 
-    return {
+    # Riuso chiusura: se per il giorno target esiste fine-giornata.md
+    # con discorso/Q&A gia' generati, restituiscili pronti per evitare
+    # di rigenerare a vuoto cio' che e' stato gia' distillato la sera.
+    riuso = _estrai_da_fine_giornata(dates_to_read)
+
+    risultato = {
         "istruzioni_stile": _get_style_instructions(),
         "contesto": contesto,
         "entries": all_entries,
@@ -105,6 +117,72 @@ def genera_riassunto_standup(
         "num_entries": len(all_entries),
         "progetti": list(dict.fromkeys(e["progetto"] for e in all_entries)),
     }
+    if riuso is not None:
+        risultato["chiusura_disponibile"] = riuso
+        risultato["nota_riuso"] = (
+            "Per il giorno target esiste gia' fine-giornata.md con il "
+            "'Discorso per lo standup' e le 'Domande probabili' generati "
+            "alla chiusura. Usa direttamente quei testi invece di "
+            "rigenerarli, salvo che l'utente chieda esplicitamente una "
+            "versione nuova."
+        )
+    return risultato
+
+
+def _estrai_da_fine_giornata(dates_to_read: list[date]) -> Optional[dict]:
+    """
+    Cerca fine-giornata.md per il primo giorno del range ed estrae le
+    sezioni utili allo standup (discorso e Q&A).
+
+    Restituisce None se:
+    - il range copre piu' giorni (lo standup multi-giorno richiede sintesi);
+    - esiste solo il legacy single-file (li' la sezione standup e' gia'
+      embedded nel diario, non c'e' chiusura snella separata);
+    - fine-giornata.md non esiste;
+    - il file esiste ma non contiene le sezioni attese.
+    """
+    if len(dates_to_read) != 1:
+        return None
+    target = dates_to_read[0]
+    if has_legacy_file(target):
+        return None
+    fg_path = get_fine_giornata_path(target)
+    if not fg_path.exists():
+        return None
+
+    contenuto = fg_path.read_text(encoding="utf-8")
+    discorso = _estrai_sezione(contenuto, "Discorso per lo standup")
+    qa = _estrai_sezione(contenuto, "Domande probabili e risposte pronte")
+    if not discorso and not qa:
+        return None
+
+    return {
+        "file": str(fg_path),
+        "discorso_standup": discorso,
+        "qa_standup": qa,
+    }
+
+
+def _estrai_sezione(contenuto: str, header: str) -> Optional[str]:
+    """
+    Estrae il testo di una sezione H2 dal contenuto markdown.
+
+    Cerca `## {header}` e restituisce il testo fino al successivo `## ` o
+    al separatore `---` o alla fine del file. Restituisce None se la
+    sezione non esiste.
+    """
+    marker = f"## {header}"
+    idx = contenuto.find(marker)
+    if idx < 0:
+        return None
+    start = idx + len(marker)
+    rest = contenuto[start:]
+    next_h2 = rest.find("\n## ")
+    next_sep = rest.find("\n---")
+    candidates = [pos for pos in (next_h2, next_sep) if pos >= 0]
+    end = min(candidates) if candidates else len(rest)
+    sezione = rest[:end].strip()
+    return sezione or None
 
 
 def _ultimo_giorno_lavorativo(oggi: date) -> date:

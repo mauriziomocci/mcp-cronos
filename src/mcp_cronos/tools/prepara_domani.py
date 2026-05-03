@@ -31,9 +31,10 @@ def prepara_domani(
     """
     Prepara la cartella del prossimo giorno lavorativo (o di una data esplicita).
 
-    Crea due file nella cartella della data target:
-    - `todo.md`: scritto con `contenuto_todo`. Sovrascrive se gia' presente
-      (un to-do e' l'ultima pianificazione, non un log progressivo).
+    Crea/aggiorna i file nella cartella della data target:
+    - `todo.md`: scritto con `contenuto_todo`. Se esiste gia' un todo
+      precedente per quella data, viene salvato come `todo.bak.md`
+      prima della sovrascrittura, per non perdere annotazioni manuali.
     - `raw.md`: scheletro markdown vuoto generato dal template standard. Viene
       creato solo se il file NON esiste, per non sovrascrivere entry gia'
       aggiunte in anticipo per quella data.
@@ -44,8 +45,9 @@ def prepara_domani(
               viene usato il prossimo giorno lavorativo a partire da oggi.
 
     Returns:
-        Dict con conferma operazione, path dei due file e flag che indica
-        se `raw.md` e' stato creato adesso oppure era gia' presente.
+        Dict con conferma operazione, path dei file scritti e flag che
+        indicano se raw e' stato creato e se il todo precedente e' stato
+        salvato in backup.
     """
     if data:
         try:
@@ -57,8 +59,15 @@ def prepara_domani(
 
     todo_path = get_todo_path(target_date)
     raw_path = get_raw_path(target_date)
+    backup_path = todo_path.parent / "todo.bak.md"
 
     ensure_directory_exists(todo_path)
+
+    backup_creato = False
+    if todo_path.exists():
+        backup_path.write_text(todo_path.read_text(encoding="utf-8"), encoding="utf-8")
+        backup_creato = True
+
     todo_path.write_text(contenuto_todo, encoding="utf-8")
 
     raw_creato_adesso = False
@@ -67,16 +76,27 @@ def prepara_domani(
         raw_path.write_text(crea_template_vuoto(target_date), encoding="utf-8")
         raw_creato_adesso = True
 
+    if raw_creato_adesso:
+        raw_msg = "creato"
+    else:
+        raw_msg = "gia presente, lasciato intatto"
+
+    if backup_creato:
+        todo_msg = "sovrascritto (precedente in todo.bak.md)"
+    else:
+        todo_msg = "creato"
+
     return {
         "successo": True,
         "data": str(target_date),
         "todo_file": str(todo_path),
         "raw_file": str(raw_path),
+        "backup_file": str(backup_path) if backup_creato else None,
         "raw_creato_adesso": raw_creato_adesso,
+        "todo_backup_creato": backup_creato,
         "dimensione_todo": len(contenuto_todo),
         "messaggio": (
             f"Cartella preparata per {target_date}: "
-            f"todo.md scritto, raw.md "
-            f"{'creato' if raw_creato_adesso else 'gia presente, lasciato intatto'}."
+            f"todo.md {todo_msg}, raw.md {raw_msg}."
         ),
     }

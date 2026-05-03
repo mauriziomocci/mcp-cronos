@@ -33,6 +33,8 @@ from mcp_cronos.tools.consolida import consolida_diario
 # Import tool
 from mcp_cronos.tools.entries import aggiungi_entry, imposta_bloccanti
 from mcp_cronos.tools.fine_giornata import fine_giornata
+from mcp_cronos.tools.leggi_todo import leggi_todo
+from mcp_cronos.tools.lista_mese import lista_mese
 from mcp_cronos.tools.prepara_domani import prepara_domani
 from mcp_cronos.tools.reader import leggi_diario, lista_progetti
 from mcp_cronos.tools.scrivi_fine_giornata import scrivi_fine_giornata
@@ -269,24 +271,28 @@ Restituisce: Lista progetti con occorrenze e date.""",
     ),
     Tool(
         name="cronos_cerca",
-        description="""Cerca testo nelle entry del diario.
+        description="""Cerca testo nei file del diario (raw, todo, chiusura).
 
 Ricerca full-text case-insensitive con supporto regex.
-Utile per trovare quando si e' lavorato su un progetto, ticket, argomento.
+Per default cerca su tutte e tre le sorgenti (raw, todo, chiusura).
+Utile per trovare quando si e' lavorato su un progetto, ticket, argomento,
+o quando una decisione e' stata presa, o cosa c'era da fare.
 
 Usa questo tool quando l'utente chiede:
 - "Quando ho lavorato su X?"
 - "Cerca nel diario Y"
 - "Trova il ticket Z"
-- "In quali giorni ho toccato il progetto W?"
+- "Quando ho deciso di fare W?" (cerca tipo=["chiusura"])
+- "In quali todo e' stato pianificato V?" (cerca tipo=["todo"])
 
 Parametri:
 - query (str, required): Testo da cercare (case-insensitive, supporta regex)
 - data_inizio (str, optional): Data inizio range YYYY-MM-DD
 - data_fine (str, optional): Data fine range YYYY-MM-DD
 - ultimi_giorni (int, optional): Giorni da cercare (default 90)
+- tipo (list[str], optional): Sorgenti da cercare. Valori: "raw", "todo", "chiusura". Default: tutte e tre.
 
-Restituisce: Lista di match con data, progetto, contesto.""",
+Restituisce: Lista di match con tipo (raw|todo|chiusura), data, contesto. Per i match in raw include progetto e descrizione; per todo/chiusura include il path del file.""",
         inputSchema={
             "type": "object",
             "properties": {
@@ -296,6 +302,11 @@ Restituisce: Lista di match con data, progetto, contesto.""",
                 "ultimi_giorni": {
                     "type": "integer",
                     "description": "Giorni da cercare (default 90)",
+                },
+                "tipo": {
+                    "type": "array",
+                    "items": {"type": "string", "enum": ["raw", "todo", "chiusura"]},
+                    "description": "Sorgenti da cercare (default: tutte e tre)",
                 },
             },
             "required": ["query"],
@@ -404,6 +415,54 @@ Restituisce: Conferma con path del file scritto.""",
                 "data": {"type": "string", "description": "Data YYYY-MM-DD (default: oggi)"},
             },
             "required": ["contenuto"],
+        },
+    ),
+    Tool(
+        name="cronos_leggi_todo",
+        description="""Legge il file todo.md di una data (default oggi).
+
+Restituisce il contenuto markdown del todo, utile per rispondere alla
+domanda "che dovevo fare oggi?". Se nella stessa cartella esiste un
+todo.bak.md (creato da una ripianificazione precedente con
+cronos_prepara_domani), il path del backup viene riportato.
+
+Parametri:
+- data (str, optional): Data del todo YYYY-MM-DD (default: oggi)
+
+Restituisce: Contenuto del file todo.md, path, ed eventuale info sul backup.""",
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "string",
+                    "description": "Data YYYY-MM-DD (opzionale, default oggi)",
+                }
+            },
+        },
+    ),
+    Tool(
+        name="cronos_lista_mese",
+        description="""Lista lo stato del diario per ogni giorno di un mese.
+
+Restituisce una vista mensile con un record per giorno che indica quali
+artifact sono presenti: legacy single-file (storico), raw.md, todo.md,
+fine-giornata.md. Per i giorni con file principale leggibile riporta il
+numero di entry parsate.
+
+Utile come dashboard "a colpo d'occhio" per il mese: dove c'e' chiusura,
+dove ci sono todo pendenti, quali giorni sono vuoti.
+
+Parametri:
+- mese (int, optional): Numero mese 1-12 (default: mese corrente)
+- anno (int, optional): Anno YYYY (default: anno corrente)
+
+Restituisce: Riepilogo totali + dettaglio per giorno con flag presenza file.""",
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "mese": {"type": "integer", "description": "Numero mese 1-12 (default corrente)"},
+                "anno": {"type": "integer", "description": "Anno YYYY (default corrente)"},
+            },
         },
     ),
     Tool(
@@ -529,6 +588,7 @@ async def call_tool(name: str, arguments: dict):
                 data_inizio=arguments.get("data_inizio"),
                 data_fine=arguments.get("data_fine"),
                 ultimi_giorni=arguments.get("ultimi_giorni", 90),
+                tipo=arguments.get("tipo"),
             )
 
         elif name == "cronos_settimana":
@@ -561,6 +621,17 @@ async def call_tool(name: str, arguments: dict):
             result = prepara_domani(
                 contenuto_todo=arguments["contenuto_todo"],
                 data=arguments.get("data"),
+            )
+
+        elif name == "cronos_leggi_todo":
+            result = leggi_todo(
+                data=arguments.get("data"),
+            )
+
+        elif name == "cronos_lista_mese":
+            result = lista_mese(
+                mese=arguments.get("mese"),
+                anno=arguments.get("anno"),
             )
 
         else:

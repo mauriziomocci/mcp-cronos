@@ -72,18 +72,33 @@ def test_prepara_domani_does_not_overwrite_existing_raw(tmp_diario):
     assert "# Entry gia scritta in anticipo" in raw_path.read_text(encoding="utf-8")
 
 
-def test_prepara_domani_overwrites_existing_todo(tmp_diario):
-    """todo.md is the latest plan: re-running prepara_domani overwrites it."""
+def test_prepara_domani_overwrites_existing_todo_and_keeps_backup(tmp_diario):
+    """todo.md is the latest plan: re-running prepara_domani overwrites it but
+    saves the previous content to todo.bak.md so manual annotations are not lost."""
     target_folder = tmp_diario / "2026" / "05" / "2026-05-05"
     target_folder.mkdir(parents=True, exist_ok=True)
     todo_path = target_folder / "todo.md"
+    backup_path = target_folder / "todo.bak.md"
     todo_path.write_text("# Todo vecchio\n", encoding="utf-8")
 
     with _patch_today(date(2026, 5, 4)):
         result = prepara_domani(contenuto_todo="# Todo nuovo\n")
 
     assert result["successo"] is True
+    assert result["todo_backup_creato"] is True
     assert todo_path.read_text(encoding="utf-8") == "# Todo nuovo\n"
+    assert backup_path.read_text(encoding="utf-8") == "# Todo vecchio\n"
+
+
+def test_prepara_domani_first_run_no_backup(tmp_diario):
+    """When no previous todo exists, no backup file is created."""
+    with _patch_today(date(2026, 5, 4)):
+        result = prepara_domani(contenuto_todo="# Primo todo\n")
+
+    assert result["todo_backup_creato"] is False
+    assert result["backup_file"] is None
+    backup_path = tmp_diario / "2026" / "05" / "2026-05-05" / "todo.bak.md"
+    assert not backup_path.exists()
 
 
 def test_prepara_domani_invalid_date(tmp_diario):
