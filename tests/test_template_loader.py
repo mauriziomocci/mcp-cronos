@@ -47,26 +47,36 @@ def test_load_builtin_consolida():
 
 
 # ---------------------------------------------------------------------------
-# fine_giornata placeholder presence
+# fine_giornata placeholder and section presence
 # ---------------------------------------------------------------------------
 
 
-@pytest.mark.parametrize(
-    "placeholder",
-    [
-        "{section_entries}",
-        "{section_blockers}",
-        "{section_day_summary}",
-        "{section_tech_summary}",
-        "{section_standup_message}",
-    ],
-)
-def test_fine_giornata_contains_placeholders(placeholder: str):
-    """All required section placeholders must be present in fine_giornata template."""
+def test_fine_giornata_contains_blockers_placeholder():
+    """The closure template must keep the blockers placeholder for config substitution."""
     from mcp_cronos.template_loader import load_template
 
     content = load_template("fine_giornata")
-    assert placeholder in content, f"Missing placeholder: {placeholder}"
+    assert "{section_blockers}" in content
+
+
+@pytest.mark.parametrize(
+    "section_marker",
+    [
+        "## Riassunto",
+        "## Numeri salienti",
+        "## Decisioni prese",
+        "## Punti aperti",
+        "## Per riprendere il lavoro",
+        "## Discorso per lo standup",
+        "## Domande probabili e risposte pronte",
+    ],
+)
+def test_fine_giornata_contains_required_sections(section_marker: str):
+    """The slim closure template must declare all the canonical sections."""
+    from mcp_cronos.template_loader import load_template
+
+    content = load_template("fine_giornata")
+    assert section_marker in content, f"Missing section: {section_marker}"
 
 
 # ---------------------------------------------------------------------------

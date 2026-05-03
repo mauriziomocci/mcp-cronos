@@ -1,9 +1,24 @@
 """
 Utility per la gestione delle date nel diario.
 
-Le date nel diario seguono queste convenzioni:
-- File: {anno}/{mese}/{anno}-{mese}-{giorno}.md (es. 2026/01/2026-01-21.md)
-- Titolo: format_title() from the active language pack (es. "Per lo Stand-up - 22 Gennaio 2026")
+Convenzioni di layout:
+- Legacy (storico): {anno}/{mese}/{anno}-{mese}-{giorno}.md
+  Esempio: 2026/04/2026-04-30.md
+  File singolo che contiene sia le entry raw sia la chiusura giornata.
+
+- Nuovo layout (giorni futuri): {anno}/{mese}/{anno}-{mese}-{giorno}/
+  Esempio: 2026/05/2026-05-04/raw.md + fine-giornata.md
+  Cartella per giorno con due file separati:
+    - raw.md: progressive log delle entry, bloccanti, consolidamenti
+    - fine-giornata.md: chiusura snella e fruibile
+
+Regola di transizione:
+- Se per una data esiste il file legacy, viene usato il legacy (no migrazione).
+- Altrimenti viene usato il nuovo layout, anche per giorni che non esistono
+  ancora (e.g. prima entry di oggi).
+
+Titolo: format_title() from the active language pack
+       (es. "Per lo Stand-up - 22 Gennaio 2026")
 """
 
 from datetime import date, datetime, timedelta
@@ -89,25 +104,99 @@ def get_standup_title(file_date: date) -> str:
     return pack.format_title(standup_date)
 
 
-def get_file_path(file_date: date, diario_path: Optional[Path] = None) -> Path:
+def _diario_root(diario_path: Optional[Path]) -> Path:
+    """Risolve il root del diario, accettando override esplicito."""
+    return diario_path if diario_path is not None else get_diario_path()
+
+
+def get_legacy_file_path(file_date: date, diario_path: Optional[Path] = None) -> Path:
     """
-    Calcola il path del file per una data specifica.
+    Path del file legacy single-file per una data.
 
-    Args:
-        file_date: Data per cui calcolare il path
-        diario_path: Path base del diario (opzionale, usa config se non specificato)
-
-    Returns:
-        Path completo del file (es. /path/to/Diario/2026/01/2026-01-21.md)
+    Esempio: /path/to/Diario/2026/04/2026-04-30.md
     """
-    if diario_path is None:
-        diario_path = get_diario_path()
-
+    root = _diario_root(diario_path)
     anno = file_date.strftime("%Y")
     mese = file_date.strftime("%m")
     filename = file_date.strftime("%Y-%m-%d.md")
+    return root / anno / mese / filename
 
-    return diario_path / anno / mese / filename
+
+def get_day_folder_path(file_date: date, diario_path: Optional[Path] = None) -> Path:
+    """
+    Path della cartella giornaliera nel nuovo layout.
+
+    Esempio: /path/to/Diario/2026/05/2026-05-04/
+    """
+    root = _diario_root(diario_path)
+    anno = file_date.strftime("%Y")
+    mese = file_date.strftime("%m")
+    folder = file_date.strftime("%Y-%m-%d")
+    return root / anno / mese / folder
+
+
+def get_raw_path(file_date: date, diario_path: Optional[Path] = None) -> Path:
+    """
+    Path del file `raw.md` nel nuovo layout (progressive log della giornata).
+
+    Esempio: /path/to/Diario/2026/05/2026-05-04/raw.md
+    """
+    return get_day_folder_path(file_date, diario_path) / "raw.md"
+
+
+def get_fine_giornata_path(
+    file_date: date, diario_path: Optional[Path] = None
+) -> Path:
+    """
+    Path del file `fine-giornata.md` nel nuovo layout (chiusura giornata).
+
+    Esempio: /path/to/Diario/2026/05/2026-05-04/fine-giornata.md
+    """
+    return get_day_folder_path(file_date, diario_path) / "fine-giornata.md"
+
+
+def has_legacy_file(file_date: date, diario_path: Optional[Path] = None) -> bool:
+    """True se per la data esiste il file legacy single-file."""
+    return get_legacy_file_path(file_date, diario_path).exists()
+
+
+def resolve_raw_path(file_date: date, diario_path: Optional[Path] = None) -> Path:
+    """
+    Path su cui scrivere/leggere le entry raw della giornata.
+
+    - Se esiste il legacy single-file, restituisce quello (no migrazione).
+    - Altrimenti restituisce il path `raw.md` nel nuovo layout (anche se
+      la cartella non esiste ancora; il chiamante creera' i parent).
+    """
+    if has_legacy_file(file_date, diario_path):
+        return get_legacy_file_path(file_date, diario_path)
+    return get_raw_path(file_date, diario_path)
+
+
+def resolve_fine_giornata_path(
+    file_date: date, diario_path: Optional[Path] = None
+) -> Path:
+    """
+    Path su cui scrivere/leggere la chiusura giornata.
+
+    - Se esiste il legacy single-file, restituisce quello: la chiusura
+      sostituisce o si appende al file unico, come faceva prima del refactor.
+    - Altrimenti restituisce il path `fine-giornata.md` nel nuovo layout.
+    """
+    if has_legacy_file(file_date, diario_path):
+        return get_legacy_file_path(file_date, diario_path)
+    return get_fine_giornata_path(file_date, diario_path)
+
+
+def get_file_path(file_date: date, diario_path: Optional[Path] = None) -> Path:
+    """
+    Backward-compat: path del file principale per una data.
+
+    Mantenuto per i tool che ancora ragionano in termini di "file unico"
+    (lettura, ricerca, settimana). Risolve come `resolve_raw_path`: legacy
+    se esiste, altrimenti `raw.md` nel nuovo layout.
+    """
+    return resolve_raw_path(file_date, diario_path)
 
 
 def ensure_directory_exists(file_path: Path) -> None:

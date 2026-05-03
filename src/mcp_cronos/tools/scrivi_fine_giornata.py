@@ -10,7 +10,12 @@ import subprocess
 from typing import Optional
 
 from mcp_cronos.config import get_diario_path, load_config
-from mcp_cronos.utils.dates import ensure_directory_exists, get_file_path, get_today, parse_date
+from mcp_cronos.utils.dates import (
+    ensure_directory_exists,
+    get_today,
+    parse_date,
+    resolve_fine_giornata_path,
+)
 
 
 def _git_commit_and_push(file_path, file_date) -> dict:
@@ -110,7 +115,7 @@ def scrivi_fine_giornata(
     else:
         file_date = get_today()
 
-    file_path = get_file_path(file_date)
+    file_path = resolve_fine_giornata_path(file_date)
     ensure_directory_exists(file_path)
 
     file_path.write_text(contenuto, encoding="utf-8")

@@ -109,3 +109,54 @@ def test_invalid_date(tmp_diario):
     """scrivi_fine_giornata returns an error for an invalid date."""
     result = scrivi_fine_giornata(contenuto="# Test\n", data="bad-date")
     assert "errore" in result
+
+
+# ---------------------------------------------------------------------------
+# New folder layout: closure file separated from raw entries
+# ---------------------------------------------------------------------------
+
+
+def test_scrivi_uses_new_layout_for_fresh_date(tmp_diario, config_toml_it):
+    """For a date with no legacy file, scrivi_fine_giornata writes to <day>/fine-giornata.md."""
+    content = "# Closure\n\nSlim summary.\n"
+    with _patch_today(date(2026, 5, 4)):
+        result = scrivi_fine_giornata(contenuto=content)
+
+    expected_path = tmp_diario / "2026" / "05" / "2026-05-04" / "fine-giornata.md"
+    assert result["successo"] is True
+    assert Path(result["file"]) == expected_path
+    assert expected_path.read_text(encoding="utf-8") == content
+
+
+def test_scrivi_uses_legacy_when_present(tmp_diario, config_toml_it):
+    """When the legacy single-file exists, scrivi_fine_giornata writes to it (no folder split)."""
+    legacy = tmp_diario / "2026" / "04" / "2026-04-09.md"
+    legacy.parent.mkdir(parents=True, exist_ok=True)
+    legacy.write_text("preexisting raw content", encoding="utf-8")
+
+    content = "# Closure on legacy\n\nReplaces in-place.\n"
+    with _patch_today(date(2026, 4, 9)):
+        result = scrivi_fine_giornata(contenuto=content)
+
+    assert result["successo"] is True
+    assert Path(result["file"]) == legacy
+    assert legacy.read_text(encoding="utf-8") == content
+    # No per-day folder should be created when the legacy file already exists
+    assert not (tmp_diario / "2026" / "04" / "2026-04-09").exists()
+
+
+def test_scrivi_does_not_overwrite_raw_in_new_layout(tmp_diario, config_toml_it):
+    """raw.md and fine-giornata.md must coexist in the per-day folder without overlap."""
+    raw_path = tmp_diario / "2026" / "05" / "2026-05-04" / "raw.md"
+    raw_path.parent.mkdir(parents=True, exist_ok=True)
+    raw_path.write_text("# Raw entries of the day\n\nDetailed log.\n", encoding="utf-8")
+
+    closure = "# Closure\n\nKey points only.\n"
+    with _patch_today(date(2026, 5, 4)):
+        result = scrivi_fine_giornata(contenuto=closure)
+
+    fine_path = tmp_diario / "2026" / "05" / "2026-05-04" / "fine-giornata.md"
+    assert Path(result["file"]) == fine_path
+    assert fine_path.read_text(encoding="utf-8") == closure
+    # raw.md must remain untouched
+    assert "Detailed log." in raw_path.read_text(encoding="utf-8")

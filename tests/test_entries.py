@@ -99,3 +99,55 @@ def test_imposta_bloccanti_file_not_found(tmp_diario):
 
     assert "errore" in result
     assert "non trovato" in result["errore"]
+
+
+# ---------------------------------------------------------------------------
+# New folder layout: per-day folder with raw.md
+# ---------------------------------------------------------------------------
+
+
+def test_aggiungi_entry_uses_new_folder_layout_for_fresh_date(tmp_diario):
+    """For a date with no legacy file, aggiungi_entry writes to <day>/raw.md."""
+    from pathlib import Path
+
+    with patch("mcp_cronos.tools.entries.get_today", return_value=date(2026, 5, 4)):
+        result = aggiungi_entry(
+            progetto="NuovoLayout",
+            descrizione="Verifica cartella per giornata",
+            paragrafo_intro="Test del nuovo layout.",
+        )
+
+    assert result["successo"] is True
+    expected_raw = tmp_diario / "2026" / "05" / "2026-05-04" / "raw.md"
+    assert Path(result["file"]) == expected_raw
+    assert expected_raw.exists()
+    assert "### NuovoLayout - Verifica cartella per giornata" in expected_raw.read_text(
+        encoding="utf-8"
+    )
+
+
+def test_aggiungi_entry_appends_to_legacy_when_present(tmp_diario):
+    """If the legacy single-file already exists, aggiungi_entry keeps using it."""
+    from pathlib import Path
+
+    legacy = tmp_diario / "2026" / "01" / "2026-01-21.md"
+    legacy.parent.mkdir(parents=True, exist_ok=True)
+    legacy.write_text(
+        "# Per lo Stand-up - 22 Gennaio 2026\n\n"
+        "## Cosa ho fatto ieri\n\n"
+        "## Bloccanti\n\nNessuno\n",
+        encoding="utf-8",
+    )
+
+    with patch("mcp_cronos.tools.entries.get_today", return_value=date(2026, 1, 21)):
+        result = aggiungi_entry(
+            progetto="Legacy",
+            descrizione="Append a file storico",
+            paragrafo_intro="Verifica retrocompatibilita'.",
+        )
+
+    assert result["successo"] is True
+    assert Path(result["file"]) == legacy
+    assert "### Legacy - Append a file storico" in legacy.read_text(encoding="utf-8")
+    # No per-day folder must be created when legacy exists
+    assert not (tmp_diario / "2026" / "01" / "2026-01-21").exists()

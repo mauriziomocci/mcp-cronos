@@ -55,25 +55,138 @@ def test_get_standup_title_english(config_toml_en):
 
 
 # ---------------------------------------------------------------------------
-# get_file_path
+# Path layout — new folder layout vs legacy single-file
 # ---------------------------------------------------------------------------
 
 
-def test_get_file_path_format(tmp_diario):
-    """get_file_path must return <diario>/<year>/<month>/<year>-<month>-<day>.md."""
+def test_get_legacy_file_path(tmp_diario):
+    """get_legacy_file_path always returns the single-file legacy path."""
+    from mcp_cronos.utils.dates import get_legacy_file_path
+
+    result = get_legacy_file_path(date(2026, 1, 21), diario_path=tmp_diario)
+    assert result == tmp_diario / "2026" / "01" / "2026-01-21.md"
+
+
+def test_get_day_folder_path(tmp_diario):
+    """get_day_folder_path returns the per-day folder for the new layout."""
+    from mcp_cronos.utils.dates import get_day_folder_path
+
+    result = get_day_folder_path(date(2026, 5, 4), diario_path=tmp_diario)
+    assert result == tmp_diario / "2026" / "05" / "2026-05-04"
+
+
+def test_get_raw_path(tmp_diario):
+    """get_raw_path returns <day_folder>/raw.md."""
+    from mcp_cronos.utils.dates import get_raw_path
+
+    result = get_raw_path(date(2026, 5, 4), diario_path=tmp_diario)
+    assert result == tmp_diario / "2026" / "05" / "2026-05-04" / "raw.md"
+
+
+def test_get_fine_giornata_path(tmp_diario):
+    """get_fine_giornata_path returns <day_folder>/fine-giornata.md."""
+    from mcp_cronos.utils.dates import get_fine_giornata_path
+
+    result = get_fine_giornata_path(date(2026, 5, 4), diario_path=tmp_diario)
+    assert (
+        result
+        == tmp_diario / "2026" / "05" / "2026-05-04" / "fine-giornata.md"
+    )
+
+
+def test_has_legacy_file_returns_false_when_missing(tmp_diario):
+    """has_legacy_file is False when the single-file does not exist."""
+    from mcp_cronos.utils.dates import has_legacy_file
+
+    assert has_legacy_file(date(2026, 5, 4), diario_path=tmp_diario) is False
+
+
+def test_has_legacy_file_returns_true_when_present(tmp_diario):
+    """has_legacy_file is True after creating the legacy file."""
+    from mcp_cronos.utils.dates import has_legacy_file
+
+    legacy = tmp_diario / "2026" / "01" / "2026-01-21.md"
+    legacy.parent.mkdir(parents=True, exist_ok=True)
+    legacy.write_text("legacy", encoding="utf-8")
+
+    assert has_legacy_file(date(2026, 1, 21), diario_path=tmp_diario) is True
+
+
+def test_resolve_raw_path_uses_legacy_when_present(tmp_diario):
+    """resolve_raw_path returns the legacy path when the single-file exists."""
+    from mcp_cronos.utils.dates import resolve_raw_path
+
+    legacy = tmp_diario / "2026" / "01" / "2026-01-21.md"
+    legacy.parent.mkdir(parents=True, exist_ok=True)
+    legacy.write_text("legacy", encoding="utf-8")
+
+    result = resolve_raw_path(date(2026, 1, 21), diario_path=tmp_diario)
+    assert result == legacy
+
+
+def test_resolve_raw_path_uses_new_layout_when_no_legacy(tmp_diario):
+    """resolve_raw_path returns raw.md inside the day folder when no legacy."""
+    from mcp_cronos.utils.dates import resolve_raw_path
+
+    result = resolve_raw_path(date(2026, 5, 4), diario_path=tmp_diario)
+    assert result == tmp_diario / "2026" / "05" / "2026-05-04" / "raw.md"
+
+
+def test_resolve_fine_giornata_path_uses_legacy_when_present(tmp_diario):
+    """resolve_fine_giornata_path returns the legacy path when the single-file exists."""
+    from mcp_cronos.utils.dates import resolve_fine_giornata_path
+
+    legacy = tmp_diario / "2026" / "01" / "2026-01-21.md"
+    legacy.parent.mkdir(parents=True, exist_ok=True)
+    legacy.write_text("legacy", encoding="utf-8")
+
+    result = resolve_fine_giornata_path(date(2026, 1, 21), diario_path=tmp_diario)
+    assert result == legacy
+
+
+def test_resolve_fine_giornata_path_uses_new_layout_when_no_legacy(tmp_diario):
+    """resolve_fine_giornata_path points to the new fine-giornata.md when no legacy."""
+    from mcp_cronos.utils.dates import resolve_fine_giornata_path
+
+    result = resolve_fine_giornata_path(date(2026, 5, 4), diario_path=tmp_diario)
+    assert (
+        result
+        == tmp_diario / "2026" / "05" / "2026-05-04" / "fine-giornata.md"
+    )
+
+
+# ---------------------------------------------------------------------------
+# get_file_path (backward-compat alias for resolve_raw_path)
+# ---------------------------------------------------------------------------
+
+
+def test_get_file_path_returns_legacy_when_present(tmp_diario):
+    """get_file_path keeps using the legacy single-file when it exists."""
     from mcp_cronos.utils.dates import get_file_path
 
+    legacy = tmp_diario / "2026" / "01" / "2026-01-21.md"
+    legacy.parent.mkdir(parents=True, exist_ok=True)
+    legacy.write_text("legacy", encoding="utf-8")
+
     result = get_file_path(date(2026, 1, 21), diario_path=tmp_diario)
-    expected = tmp_diario / "2026" / "01" / "2026-01-21.md"
+    assert result == legacy
+
+
+def test_get_file_path_returns_new_raw_when_no_legacy(tmp_diario):
+    """get_file_path falls back to <day_folder>/raw.md when no legacy file exists."""
+    from mcp_cronos.utils.dates import get_file_path
+
+    result = get_file_path(date(2026, 5, 4), diario_path=tmp_diario)
+    expected = tmp_diario / "2026" / "05" / "2026-05-04" / "raw.md"
     assert result == expected
 
 
 def test_get_file_path_uses_config_when_no_arg(tmp_diario):
-    """When diario_path is omitted, get_file_path must fall back to get_diario_path()."""
+    """get_file_path falls back to get_diario_path() when diario_path is None."""
     from mcp_cronos.utils.dates import get_file_path
 
     result = get_file_path(date(2026, 3, 5))
-    expected = tmp_diario / "2026" / "03" / "2026-03-05.md"
+    expected = tmp_diario / "2026" / "03" / "2026-03-05" / "raw.md"
     assert result == expected
 
 
