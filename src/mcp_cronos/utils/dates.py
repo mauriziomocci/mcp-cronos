@@ -34,6 +34,34 @@ def get_today() -> date:
     return date.today()
 
 
+def get_next_working_day(from_date: date) -> date:
+    """
+    Restituisce il prossimo giorno lavorativo (lun-ven) dopo `from_date`.
+
+    Regole:
+    - lunedi-giovedi -> giorno successivo
+    - venerdi -> lunedi della settimana successiva (+3 giorni)
+    - sabato -> lunedi (+2 giorni)
+    - domenica -> lunedi (+1 giorno)
+
+    Args:
+        from_date: Data di partenza.
+
+    Returns:
+        Data del prossimo giorno lavorativo.
+    """
+    weekday = from_date.weekday()
+    if weekday == 4:  # Friday
+        delta = 3
+    elif weekday == 5:  # Saturday
+        delta = 2
+    elif weekday == 6:  # Sunday
+        delta = 1
+    else:
+        delta = 1
+    return from_date + timedelta(days=delta)
+
+
 def parse_date(date_str: str) -> date:
     """
     Converte una stringa data in oggetto date.
@@ -153,6 +181,18 @@ def get_fine_giornata_path(
     Esempio: /path/to/Diario/2026/05/2026-05-04/fine-giornata.md
     """
     return get_day_folder_path(file_date, diario_path) / "fine-giornata.md"
+
+
+def get_todo_path(file_date: date, diario_path: Optional[Path] = None) -> Path:
+    """
+    Path del file `todo.md` nel nuovo layout (lista cose da fare per la giornata).
+
+    Esiste solo nel nuovo layout cartella per giorno: i diari legacy non
+    hanno mai avuto un todo separato, quindi non c'e' fallback retroattivo.
+
+    Esempio: /path/to/Diario/2026/05/2026-05-04/todo.md
+    """
+    return get_day_folder_path(file_date, diario_path) / "todo.md"
 
 
 def has_legacy_file(file_date: date, diario_path: Optional[Path] = None) -> bool:

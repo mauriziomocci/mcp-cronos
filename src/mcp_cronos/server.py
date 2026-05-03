@@ -33,6 +33,7 @@ from mcp_cronos.tools.consolida import consolida_diario
 # Import tool
 from mcp_cronos.tools.entries import aggiungi_entry, imposta_bloccanti
 from mcp_cronos.tools.fine_giornata import fine_giornata
+from mcp_cronos.tools.prepara_domani import prepara_domani
 from mcp_cronos.tools.reader import leggi_diario, lista_progetti
 from mcp_cronos.tools.scrivi_fine_giornata import scrivi_fine_giornata
 from mcp_cronos.tools.settimana import riassunto_settimana
@@ -405,6 +406,48 @@ Restituisce: Conferma con path del file scritto.""",
             "required": ["contenuto"],
         },
     ),
+    Tool(
+        name="cronos_prepara_domani",
+        description="""Prepara la cartella del prossimo giorno lavorativo con todo.md e scheletro raw.md.
+
+Default: il giorno target e' calcolato come prossimo giorno lavorativo da oggi
+(lun-gio -> +1, ven -> lun, sab -> lun, dom -> lun). In alternativa si puo'
+specificare una data esplicita per pianificare un giorno futuro qualsiasi.
+
+Comportamento:
+- Crea/sovrascrive `todo.md` con `contenuto_todo` (un to-do e' l'ultima
+  pianificazione, non un log progressivo).
+- Crea `raw.md` con lo scheletro standard SOLO se non esiste gia', per non
+  sovrascrivere entry aggiunte in anticipo.
+
+Usa questo tool:
+- Al termine di `cronos_scrivi_fine_giornata`, per impostare il todo del
+  giorno successivo a partire dai punti aperti della giornata.
+- Manualmente quando vuoi pianificare le cose da fare in un giorno futuro.
+
+Parametri:
+- contenuto_todo (str, required): Contenuto markdown completo di todo.md
+- data (str, optional): Data target YYYY-MM-DD (default: prossimo giorno lavorativo)
+
+Restituisce: Conferma con path di todo.md e raw.md, e flag se raw e' stato creato.""",
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "contenuto_todo": {
+                    "type": "string",
+                    "description": "Contenuto markdown completo del file todo.md",
+                },
+                "data": {
+                    "type": "string",
+                    "description": (
+                        "Data target YYYY-MM-DD (opzionale, default: prossimo "
+                        "giorno lavorativo)"
+                    ),
+                },
+            },
+            "required": ["contenuto_todo"],
+        },
+    ),
 ]
 
 
@@ -511,6 +554,12 @@ async def call_tool(name: str, arguments: dict):
         elif name == "cronos_scrivi_fine_giornata":
             result = scrivi_fine_giornata(
                 contenuto=arguments["contenuto"],
+                data=arguments.get("data"),
+            )
+
+        elif name == "cronos_prepara_domani":
+            result = prepara_domani(
+                contenuto_todo=arguments["contenuto_todo"],
                 data=arguments.get("data"),
             )
 

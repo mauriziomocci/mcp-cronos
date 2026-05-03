@@ -94,6 +94,53 @@ def test_get_fine_giornata_path(tmp_diario):
     )
 
 
+def test_get_todo_path(tmp_diario):
+    """get_todo_path returns <day_folder>/todo.md."""
+    from mcp_cronos.utils.dates import get_todo_path
+
+    result = get_todo_path(date(2026, 5, 4), diario_path=tmp_diario)
+    assert result == tmp_diario / "2026" / "05" / "2026-05-04" / "todo.md"
+
+
+# ---------------------------------------------------------------------------
+# get_next_working_day
+# ---------------------------------------------------------------------------
+
+
+def test_get_next_working_day_monday_to_thursday():
+    """Mon-Thu -> next day is just +1 (still a working day)."""
+    from mcp_cronos.utils.dates import get_next_working_day
+
+    # Mon 2026-05-04 -> Tue 2026-05-05
+    assert get_next_working_day(date(2026, 5, 4)) == date(2026, 5, 5)
+    # Thu 2026-05-07 -> Fri 2026-05-08
+    assert get_next_working_day(date(2026, 5, 7)) == date(2026, 5, 8)
+
+
+def test_get_next_working_day_friday_skips_to_monday():
+    """Friday -> Monday of next week (+3 days)."""
+    from mcp_cronos.utils.dates import get_next_working_day
+
+    # Fri 2026-05-08 -> Mon 2026-05-11
+    assert get_next_working_day(date(2026, 5, 8)) == date(2026, 5, 11)
+
+
+def test_get_next_working_day_saturday_to_monday():
+    """Saturday -> Monday (+2 days)."""
+    from mcp_cronos.utils.dates import get_next_working_day
+
+    # Sat 2026-05-09 -> Mon 2026-05-11
+    assert get_next_working_day(date(2026, 5, 9)) == date(2026, 5, 11)
+
+
+def test_get_next_working_day_sunday_to_monday():
+    """Sunday -> Monday (+1 day)."""
+    from mcp_cronos.utils.dates import get_next_working_day
+
+    # Sun 2026-05-10 -> Mon 2026-05-11
+    assert get_next_working_day(date(2026, 5, 10)) == date(2026, 5, 11)
+
+
 def test_has_legacy_file_returns_false_when_missing(tmp_diario):
     """has_legacy_file is False when the single-file does not exist."""
     from mcp_cronos.utils.dates import has_legacy_file

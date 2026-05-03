@@ -196,4 +196,42 @@ inizia a degradare, ora siamo all'80%. Settimana prossima resize obbligato.
    verificare che suoni naturale
 5. Per le "Domande probabili" pensa alle domande sgradevoli, non solo
    quelle facili: cosa potrebbe contestare un tech lead?
-6. Chiama cronos_scrivi_fine_giornata con il contenuto generato
+6. Chiama `cronos_scrivi_fine_giornata` con il contenuto generato
+7. Subito dopo la chiusura, prepara la cartella del prossimo giorno
+   lavorativo con `cronos_prepara_domani`. Vedi sezione successiva.
+
+=== PREPARAZIONE GIORNO SUCCESSIVO ===
+
+Al termine della chiusura, chiama `cronos_prepara_domani` per impostare
+il todo del prossimo giorno lavorativo (il tool calcola da solo: lun-gio
+-> domani, ven/sab/dom -> lunedi successivo). Il tool crea anche il
+raw.md scheletro per la giornata successiva (solo se non esiste gia').
+
+Il `contenuto_todo` da passare e' un markdown autocontenuto. Il modello
+da seguire:
+
+```
+# Da fare {giorno_settimana} {giorno} {mese} {anno}
+
+Promemoria scritto la sera del {oggi} a fine giornata.
+
+## 1. {prima cosa importante}
+
+{descrizione concisa, comandi pronti se servono}
+
+## 2. {seconda cosa}
+
+{...}
+```
+
+Regole per il todo:
+- Una voce per ogni "punto aperto" o "decisione da prendere" identificato
+  nella chiusura.
+- Includi comandi shell pronti quando l'azione e' operativa (kubectl,
+  bash, ecc.) — la mattina dopo si copia-incolla.
+- Includi link interni a memorie/diari/strategie pertinenti in fondo.
+- Numerazione progressiva, con eventuale punto "0. PRIMA COSA" per cose
+  che vanno fatte appena si apre il computer (es. commit pendenti dalla
+  sera prima).
+- Se non ci sono cose da fare, scrivi "## Nessun punto aperto" e basta:
+  comunque crea il file per uniformita'.
