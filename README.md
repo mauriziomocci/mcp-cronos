@@ -23,6 +23,9 @@ MCP server for structured daily work diary management — entries, standup summa
 - **Weekly report**: Summarize the week grouped by project
 - **Append to project**: Add a sub-section to an existing project entry without fragmentation
 - **Write end-of-day file**: Persist the structured end-of-day content to disk
+- **Read todo**: Read the `todo.md` for a given day (what was planned)
+- **Month dashboard**: At-a-glance month view of which artifacts exist per day
+- **Prepare next day**: Create the next working day's folder with todo and raw skeleton
 - **Internationalisation**: Built-in Italian and English language packs, configurable via `cronos.toml`
 - **Git integration**: Automatic commit (and optional push) at end-of-day
 
@@ -222,7 +225,7 @@ List all projects mentioned in the diary over a given period.
 
 #### `cronos_cerca`
 
-Full-text search across diary entries. Case-insensitive, with regex support.
+Full-text search across diary sources (raw entries, todo files, end-of-day files). Case-insensitive, with regex support.
 
 **Required parameters:**
 - `query` (string): Text to search for (supports regular expressions)
@@ -231,8 +234,9 @@ Full-text search across diary entries. Case-insensitive, with regex support.
 - `data_inizio` (string): Search range start `YYYY-MM-DD`
 - `data_fine` (string): Search range end `YYYY-MM-DD`
 - `ultimi_giorni` (integer): Days to search (default: 90)
+- `tipo` (list[str]): Sources to search — `"raw"`, `"todo"`, `"chiusura"`. Default: all three.
 
-**Returns:** List of matches with date, project, and surrounding context.
+**Returns:** List of matches with type (`raw`|`todo`|`chiusura`), date, and surrounding context.
 
 ---
 
@@ -284,6 +288,47 @@ Write the end-of-day file with the fully generated content. Use this tool after 
 
 ---
 
+#### `cronos_leggi_todo`
+
+Read the `todo.md` for a given day. Useful for answering "what was I supposed to do today?". If a `todo.bak.md` backup exists in the same folder (created by a previous `cronos_prepara_domani` overwrite), its path is reported alongside the main content.
+
+**Optional parameters:**
+- `data` (string): Date `YYYY-MM-DD` (default: today)
+
+**Returns:** Content of `todo.md`, its file path, and optional backup info.
+
+---
+
+#### `cronos_lista_mese`
+
+Month dashboard: one row per day showing which artifacts exist (legacy single-file, `raw.md`, `todo.md`, `fine-giornata.md`) and the entry count for days whose main file is readable.
+
+**Optional parameters:**
+- `mese` (integer): Month number 1–12 (default: current month)
+- `anno` (integer): Year `YYYY` (default: current year)
+
+**Returns:** Totals summary plus per-day detail with artifact presence flags.
+
+---
+
+#### `cronos_prepara_domani`
+
+Prepare the next working day's folder. By default the target date is calculated as the next working day from today (Mon–Thu → +1 day, Fri/Sat/Sun → Monday). An explicit date can be provided to plan any future day.
+
+Behaviour:
+- Creates or overwrites `todo.md` with `contenuto_todo` (a todo is the latest plan, not a running log; any existing `todo.md` is backed up to `todo.bak.md`).
+- Creates `raw.md` with the standard skeleton **only if it does not already exist**, to avoid overwriting entries added in advance.
+
+**Required parameters:**
+- `contenuto_todo` (string): Complete markdown content for `todo.md`
+
+**Optional parameters:**
+- `data` (string): Target date `YYYY-MM-DD` (default: next working day)
+
+**Returns:** Confirmation with paths of `todo.md` and `raw.md`, and a flag indicating whether `raw.md` was created.
+
+---
+
 ### Diary Format
 
 #### File Structure
@@ -292,14 +337,18 @@ Diary files are organised in a year/month hierarchy under the diary root:
 
 ```
 Diary/
-├── cronos.toml          (optional configuration)
-├── templates/           (optional custom templates)
+├── cronos.toml
+├── templates/
 └── {year}/
     └── {month}/
-        └── {year}-{month}-{day}.md
+        ├── {year}-{month}-{day}.md        (legacy single-file, historical)
+        └── {year}-{month}-{day}/          (current per-day folder)
+            ├── raw.md            progressive daily log
+            ├── fine-giornata.md  end-of-day closure
+            └── todo.md           day's to-do list
 ```
 
-Example: `Diary/2025/04/2025-04-09.md`
+Days that already have a legacy single file keep using it without migration; new days use the per-day folder.
 
 #### Markdown Format
 
@@ -358,6 +407,9 @@ Section headings, month names, weekday names, title format, and default blocker 
 - **Report settimanale**: Riassume la settimana raggruppato per progetto
 - **Aggiungi a progetto**: Aggiunge una sotto-sezione a un'entry di progetto esistente senza frammentazione
 - **Scrivi file fine giornata**: Persiste il contenuto strutturato di fine giornata su disco
+- **Lettura todo**: Legge il `todo.md` di un determinato giorno (cosa era pianificato)
+- **Dashboard mensile**: Vista del mese a colpo d'occhio: quali artefatti esistono per ogni giorno
+- **Prepara domani**: Crea la cartella del prossimo giorno lavorativo con todo e scheletro raw
 - **Internazionalizzazione**: Pacchetti lingua italiano e inglese integrati, configurabili via `cronos.toml`
 - **Integrazione Git**: Commit automatico (e push opzionale) a fine giornata
 
@@ -557,7 +609,7 @@ Elenca tutti i progetti menzionati nel diario in un dato periodo.
 
 #### `cronos_cerca`
 
-Ricerca full-text nel diario. Case-insensitive, con supporto regex.
+Ricerca full-text nelle sorgenti del diario (entry raw, file todo, file di chiusura). Case-insensitive, con supporto regex.
 
 **Parametri obbligatori:**
 - `query` (string): Testo da cercare (supporta espressioni regolari)
@@ -566,8 +618,9 @@ Ricerca full-text nel diario. Case-insensitive, con supporto regex.
 - `data_inizio` (string): Inizio range di ricerca `YYYY-MM-DD`
 - `data_fine` (string): Fine range di ricerca `YYYY-MM-DD`
 - `ultimi_giorni` (integer): Giorni da cercare (predefinito: 90)
+- `tipo` (list[str]): Sorgenti da cercare — `"raw"`, `"todo"`, `"chiusura"`. Default: tutte e tre.
 
-**Restituisce:** Lista di match con data, progetto e contesto circostante.
+**Restituisce:** Lista di match con tipo (`raw`|`todo`|`chiusura`), data e contesto circostante.
 
 ---
 
@@ -619,6 +672,47 @@ Scrive il file di fine giornata con il contenuto generato. Usare questo tool DOP
 
 ---
 
+#### `cronos_leggi_todo`
+
+Legge il file `todo.md` di una data. Utile per rispondere alla domanda "cosa dovevo fare oggi?". Se nella stessa cartella esiste un `todo.bak.md` (creato da una ripianificazione precedente con `cronos_prepara_domani`), il path del backup viene riportato insieme al contenuto principale.
+
+**Parametri opzionali:**
+- `data` (string): Data `YYYY-MM-DD` (predefinito: oggi)
+
+**Restituisce:** Contenuto di `todo.md`, path del file e info eventuale sul backup.
+
+---
+
+#### `cronos_lista_mese`
+
+Dashboard mensile: un record per giorno con l'indicazione di quali artefatti sono presenti (legacy single-file, `raw.md`, `todo.md`, `fine-giornata.md`) e il numero di entry per i giorni con file principale leggibile.
+
+**Parametri opzionali:**
+- `mese` (integer): Numero mese 1-12 (predefinito: mese corrente)
+- `anno` (integer): Anno `YYYY` (predefinito: anno corrente)
+
+**Restituisce:** Riepilogo totali e dettaglio per giorno con flag di presenza degli artefatti.
+
+---
+
+#### `cronos_prepara_domani`
+
+Prepara la cartella del prossimo giorno lavorativo. Per default il giorno target e' calcolato come prossimo giorno lavorativo da oggi (lun-gio → +1 giorno, ven/sab/dom → lunedi'). E' possibile specificare una data esplicita per pianificare un qualsiasi giorno futuro.
+
+Comportamento:
+- Crea o sovrascrive `todo.md` con `contenuto_todo` (un todo e' l'ultima pianificazione, non un log progressivo; l'eventuale `todo.md` esistente viene salvato come `todo.bak.md`).
+- Crea `raw.md` con lo scheletro standard **solo se non esiste gia'**, per non sovrascrivere entry aggiunte in anticipo.
+
+**Parametri obbligatori:**
+- `contenuto_todo` (string): Contenuto markdown completo di `todo.md`
+
+**Parametri opzionali:**
+- `data` (string): Data target `YYYY-MM-DD` (predefinito: prossimo giorno lavorativo)
+
+**Restituisce:** Conferma con path di `todo.md` e `raw.md`, e flag che indica se `raw.md` e' stato creato.
+
+---
+
 ### Formato Diario
 
 #### Struttura File
@@ -627,14 +721,18 @@ I file del diario sono organizzati in una gerarchia anno/mese sotto la directory
 
 ```
 Diario/
-├── cronos.toml          (configurazione opzionale)
-├── templates/           (template personalizzati opzionali)
+├── cronos.toml
+├── templates/
 └── {anno}/
     └── {mese}/
-        └── {anno}-{mese}-{giorno}.md
+        ├── {anno}-{mese}-{giorno}.md        (legacy single-file, storico)
+        └── {anno}-{mese}-{giorno}/          (cartella per-giorno, attuale)
+            ├── raw.md            log progressivo giornaliero
+            ├── fine-giornata.md  chiusura di fine giornata
+            └── todo.md           lista delle cose da fare
 ```
 
-Esempio: `Diario/2025/04/2025-04-09.md`
+I giorni che hanno gia' un file legacy continuano a usarlo senza migrazione; i nuovi giorni usano la cartella per-giorno.
 
 #### Formato Markdown
 

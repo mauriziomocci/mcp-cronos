@@ -5,7 +5,6 @@ These fixtures provide isolated temporary environments for each test,
 ensuring no test pollutes the real diary directory or global config state.
 """
 
-import os
 from pathlib import Path
 
 import pytest

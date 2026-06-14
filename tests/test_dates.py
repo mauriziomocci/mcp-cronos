@@ -6,7 +6,6 @@ parse_date, get_date_range, ensure_directory_exists.
 """
 
 from datetime import date
-from pathlib import Path
 
 import pytest
 
@@ -42,10 +41,9 @@ def test_get_standup_title_italian_default():
 
 def test_get_standup_title_english(config_toml_en):
     """With lang='en' in cronos.toml the title must use English format."""
-    from mcp_cronos.utils.dates import get_standup_title
-
     # Reload config so the fixture's cronos.toml is picked up
     from mcp_cronos.config import _reset_config
+    from mcp_cronos.utils.dates import get_standup_title
 
     _reset_config()
 
@@ -88,10 +86,7 @@ def test_get_fine_giornata_path(tmp_diario):
     from mcp_cronos.utils.dates import get_fine_giornata_path
 
     result = get_fine_giornata_path(date(2026, 5, 4), diario_path=tmp_diario)
-    assert (
-        result
-        == tmp_diario / "2026" / "05" / "2026-05-04" / "fine-giornata.md"
-    )
+    assert result == tmp_diario / "2026" / "05" / "2026-05-04" / "fine-giornata.md"
 
 
 def test_get_todo_path(tmp_diario):
@@ -196,10 +191,7 @@ def test_resolve_fine_giornata_path_uses_new_layout_when_no_legacy(tmp_diario):
     from mcp_cronos.utils.dates import resolve_fine_giornata_path
 
     result = resolve_fine_giornata_path(date(2026, 5, 4), diario_path=tmp_diario)
-    assert (
-        result
-        == tmp_diario / "2026" / "05" / "2026-05-04" / "fine-giornata.md"
-    )
+    assert result == tmp_diario / "2026" / "05" / "2026-05-04" / "fine-giornata.md"
 
 
 # ---------------------------------------------------------------------------

@@ -133,9 +133,7 @@ def test_aggiungi_entry_appends_to_legacy_when_present(tmp_diario):
     legacy = tmp_diario / "2026" / "01" / "2026-01-21.md"
     legacy.parent.mkdir(parents=True, exist_ok=True)
     legacy.write_text(
-        "# Per lo Stand-up - 22 Gennaio 2026\n\n"
-        "## Cosa ho fatto ieri\n\n"
-        "## Bloccanti\n\nNessuno\n",
+        "# Per lo Stand-up - 22 Gennaio 2026\n\n## Cosa ho fatto ieri\n\n## Bloccanti\n\nNessuno\n",
         encoding="utf-8",
     )
 

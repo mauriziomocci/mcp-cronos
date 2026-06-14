@@ -112,10 +112,7 @@ def test_standup_reuses_chiusura_when_present(tmp_diario):
 
 def test_standup_no_chiusura_no_reuse(tmp_diario):
     """If fine-giornata.md is missing, no `chiusura_disponibile` field."""
-    raw = (
-        "# T\n\n## Cosa ho fatto ieri\n\n### P - D\n\nx\n\n---\n\n"
-        "## Bloccanti\n\nNessuno\n"
-    )
+    raw = "# T\n\n## Cosa ho fatto ieri\n\n### P - D\n\nx\n\n---\n\n## Bloccanti\n\nNessuno\n"
     folder = tmp_diario / "2026" / "05" / "2026-05-04"
     folder.mkdir(parents=True, exist_ok=True)
     (folder / "raw.md").write_text(raw, encoding="utf-8")
@@ -131,8 +128,7 @@ def test_standup_legacy_does_not_reuse(tmp_diario):
     legacy = tmp_diario / "2026" / "04" / "2026-04-09.md"
     legacy.parent.mkdir(parents=True, exist_ok=True)
     legacy.write_text(
-        "# T\n\n## Cosa ho fatto ieri\n\n### P - D\n\nx\n\n---\n\n"
-        "## Bloccanti\n\nNessuno\n",
+        "# T\n\n## Cosa ho fatto ieri\n\n### P - D\n\nx\n\n---\n\n## Bloccanti\n\nNessuno\n",
         encoding="utf-8",
     )
 
@@ -144,9 +140,7 @@ def test_standup_legacy_does_not_reuse(tmp_diario):
 
 def test_standup_multi_day_range_no_reuse(tmp_diario):
     """A multi-day range never triggers chiusura reuse (would mix days)."""
-    chiusura = (
-        "# Closure\n\n## Discorso per lo standup\n\nx.\n\n## Domande probabili e risposte pronte\n\nQ\n"
-    )
+    chiusura = "# Closure\n\n## Discorso per lo standup\n\nx.\n\n## Domande probabili e risposte pronte\n\nQ\n"
     raw = "# T\n\n## Cosa ho fatto ieri\n\n### P - D\n\nx\n\n---\n\n## Bloccanti\n\nNessuno\n"
     for day in ("2026-05-04", "2026-05-05"):
         folder = tmp_diario / day[:4] / day[5:7] / day

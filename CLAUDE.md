@@ -30,7 +30,7 @@ uv run ruff check src/mcp_cronos/
 ```
 src/mcp_cronos/
   __init__.py           # Package entry point, version
-  server.py             # MCP server, tool definitions and dispatch (11 tools)
+  server.py             # MCP server, tool definitions and dispatch (14 tools)
   config.py             # Configuration: TOML loading, CronosConfig singleton
   i18n.py               # Language packs (Italian, English), LanguagePack dataclass
   template_loader.py    # LLM template loading with user override support
@@ -49,6 +49,9 @@ src/mcp_cronos/
     cerca.py            # cronos_cerca (full-text search with regex)
     settimana.py        # cronos_settimana (weekly summary by project)
     aggiungi_progetto.py  # cronos_aggiungi_a_progetto (append to existing entry)
+    leggi_todo.py         # cronos_leggi_todo (read todo.md for a date)
+    lista_mese.py         # cronos_lista_mese (month dashboard of diary artifacts)
+    prepara_domani.py     # cronos_prepara_domani (set up next working day folder)
   utils/
     dates.py            # Date parsing, file path calculation, standup title (i18n-aware)
     markdown.py         # Diary file parsing, entry extraction, markdown rendering
@@ -66,12 +69,17 @@ src/mcp_cronos/
 
 **Tool workflow**:
 - Daily entries: `cronos_aggiungi_entry` / `cronos_aggiungi_a_progetto` (append to existing)
-- Reading: `cronos_leggi_diario` / `cronos_cerca` / `cronos_lista_progetti` / `cronos_settimana`
+- Reading: `cronos_leggi_diario` / `cronos_cerca` / `cronos_lista_progetti` / `cronos_settimana` / `cronos_leggi_todo` / `cronos_lista_mese`
 - End of day: `cronos_fine_giornata` -> LLM generates content -> `cronos_scrivi_fine_giornata` (+ git commit/push)
 - Consolidation: `cronos_consolida_diario` -> LLM rewrites -> file write
 - Standup: `cronos_riassunto_standup` -> LLM generates message
 
-**Diary file structure**: `{CRONOS_DIARIO_PATH}/{year}/{month}/{year}-{month}-{day}.md`
+**Diary file structure**: current per-day folder layout
+`{CRONOS_DIARIO_PATH}/{year}/{month}/{year}-{month}-{day}/` containing `raw.md`
+(progressive daily log), `fine-giornata.md` (end-of-day closure), and `todo.md`
+(day's to-do list). Legacy days use a single file
+`{CRONOS_DIARIO_PATH}/{year}/{month}/{year}-{month}-{day}.md` and are kept as-is
+(no migration).
 
 ## Agent Rules
 
@@ -151,7 +159,7 @@ CHANGE: Technical explanation.
 ```
 
 Types: `feat`, `fix`, `docs`, `refactor`, `test`, `chore`
-Scope: module name (e.g. `server`, `entries`, `reader`, `standup`, `fine_giornata`, `consolida`, `cerca`, `settimana`, `dates`, `markdown`, `templates`, `config`)
+Scope: module name (e.g. `server`, `entries`, `reader`, `standup`, `fine_giornata`, `consolida`, `cerca`, `settimana`, `dates`, `markdown`, `templates`, `config`, `leggi_todo`, `lista_mese`, `prepara_domani`, `i18n`, `template_loader`)
 
 **FORBIDDEN**: References to Claude/AI, emoji, Co-Authored-By, attribution lines.
 
@@ -221,8 +229,12 @@ The end-of-day process is a two-step tool workflow:
 
 After writing the end-of-day file, commit and push the diary changes.
 
+4. Optionally call `cronos_prepara_domani` to create the next working day's
+   folder with a `todo.md` and an empty `raw.md` skeleton, carrying over open
+   points from the day just closed.
+
 ## Known Limitations
 
 - **Synchronous I/O**: all file operations are synchronous (pathlib read/write). Acceptable for single-user local diary.
 - **No file locking**: concurrent writes to the same diary file could conflict. Not an issue for single-user use.
-- **Tool dispatch is manual**: `call_tool()` uses if/elif chains instead of a registry. Acceptable for 11 tools.
+- **Tool dispatch is manual**: `call_tool()` uses if/elif chains instead of a registry. Acceptable for 14 tools.

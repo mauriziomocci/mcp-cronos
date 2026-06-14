@@ -33,7 +33,8 @@ class LanguagePack:
     blockers_default: str  # default text when no blockers are present
     temporal: dict[str, str]  # relative-time expressions; required keys below
 
-    # sections keys: entries, blockers, day_summary, tech_summary, standup_message
+    # sections keys: entries, blockers, day_summary, tech_summary,
+    #                standup_message, references, requested_by
     # temporal keys: yesterday, day_before, last_weekday, from_to
 
     def format_date(self, d: date) -> str:
@@ -85,6 +86,8 @@ _IT = LanguagePack(
         "day_summary": "Riassunto della giornata",
         "tech_summary": "Riassunto tecnico",
         "standup_message": "Messaggio per lo standup",
+        "references": "Riferimenti",
+        "requested_by": "Richiesto da",
     },
     blockers_default="Nessuno",
     temporal={
@@ -124,6 +127,8 @@ _EN = LanguagePack(
         "day_summary": "Daily summary",
         "tech_summary": "Technical summary",
         "standup_message": "Standup message",
+        "references": "References",
+        "requested_by": "Requested by",
     },
     blockers_default="None",
     temporal={

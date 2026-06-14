@@ -15,6 +15,11 @@ from typing import Optional
 
 from mcp_cronos.config import load_config
 
+# Italian default labels kept for backward compatibility: every diary written
+# before label localisation used these literals, regardless of language.
+_LEGACY_REFERENCES_LABEL = "Riferimenti"
+_LEGACY_REQUESTED_BY_LABEL = "Richiesto da"
+
 
 @dataclass
 class DiaryEntry:
@@ -108,6 +113,53 @@ def parse_diary_content(content: str) -> DiaryFile:
     return DiaryFile(titolo=titolo, entries=entries, bloccanti=bloccanti)
 
 
+def _split_entries_respecting_fences(content: str) -> list[str]:
+    """Split content into entry chunks at top-level '### ' headings only.
+
+    Lines inside fenced code blocks are treated as opaque: a '### ' or '---'
+    line inside a fence does not start or end an entry. This prevents shell
+    comments or diff markers in code samples from being misread as diary
+    structure.
+
+    Fences follow CommonMark rules closely enough for diary content: a fence
+    opens on a line of at least three '`' or '~' characters; it closes only on
+    a later line of the same character, at least as long, with no trailing info
+    string. Tracking the exact fence length lets a longer outer fence (e.g. four
+    backticks wrapping markdown that contains a three-backtick block) survive an
+    inner fence instead of being closed by it.
+    """
+    parts: list[str] = []
+    current: list[str] = []
+    fence_char = ""  # "`" or "~" while inside a fence, "" otherwise
+    fence_len = 0
+
+    for line in content.split("\n"):
+        stripped = line.lstrip()
+        if stripped and stripped[0] in ("`", "~"):
+            ch = stripped[0]
+            run = len(stripped) - len(stripped.lstrip(ch))
+            if run >= 3:
+                if not fence_char:
+                    # Opening fence; an info string after the run is allowed.
+                    fence_char = ch
+                    fence_len = run
+                elif ch == fence_char and run >= fence_len and stripped[run:].strip() == "":
+                    # Closing fence: same char, at least as long, no info string.
+                    fence_char = ""
+                    fence_len = 0
+
+        in_fence = bool(fence_char)
+        if not in_fence and line.startswith("### ") and current:
+            parts.append("\n".join(current))
+            current = [line]
+        else:
+            current.append(line)
+
+    if current:
+        parts.append("\n".join(current))
+    return parts
+
+
 def parse_entries(content: str) -> list[DiaryEntry]:
     """
     Parsa le entry dalla sezione "Cosa ho fatto ieri".
@@ -140,8 +192,18 @@ def parse_entries(content: str) -> list[DiaryEntry]:
 
     entries = []
 
-    # Split per H3 (###)
-    parts = re.split(r"\n(?=### )", content)
+    # Build the requester-line regex once per call (not per entry).
+    # It accepts both the configured label and the Italian legacy label so that
+    # diaries written before localisation still parse correctly.
+    _config = load_config()
+    _labels = {_config.section_requested_by, _LEGACY_REQUESTED_BY_LABEL}
+    _label_alt = "|".join(re.escape(lbl) for lbl in _labels)
+    requested_by_re = re.compile(rf"\*-(?:{_label_alt}) (.+)-\*")
+
+    # Split per H3 (###) ignorando le righe dentro blocchi di codice fenced.
+    # Un fence (``` o ~~~) puo' contenere righe '### ...' o '---' che NON sono
+    # confini di entry: una segmentazione regex naive le tratterebbe come tali.
+    parts = _split_entries_respecting_fences(content)
 
     for part in parts:
         part = part.strip()
@@ -166,10 +228,9 @@ def parse_entries(content: str) -> list[DiaryEntry]:
         # Resto del contenuto
         contenuto_lines = lines[1:]
 
-        # Cerca "Richiesto da"
         richiesto_da = None
         for line in contenuto_lines:
-            match = re.match(r"\*-Richiesto da (.+)-\*", line.strip())
+            match = requested_by_re.match(line.strip())
             if match:
                 richiesto_da = match.group(1)
                 break
@@ -222,14 +283,15 @@ def extract_references(content: str) -> Optional[dict]:
     Returns:
         Dict con i riferimenti trovati, None se non presenti
     """
-    if "**Riferimenti:**" not in content:
+    ref_headers = {f"**{label}:**" for label in _accepted_reference_labels()}
+    if not any(h in content for h in ref_headers):
         return None
 
     refs = {}
     in_refs = False
 
     for line in content.split("\n"):
-        if "**Riferimenti:**" in line:
+        if any(h in line for h in ref_headers):
             in_refs = True
             continue
         if in_refs:
@@ -244,6 +306,17 @@ def extract_references(content: str) -> Optional[dict]:
     return refs if refs else None
 
 
+def _accepted_reference_labels() -> set[str]:
+    """Reference labels the parser accepts: configured value + Italian legacy."""
+    config = load_config()
+    return {config.section_references, _LEGACY_REFERENCES_LABEL}
+
+
+def _content_has_references(content: str) -> bool:
+    """True if content already contains a references block in any accepted label."""
+    return any(f"**{label}:**" in content for label in _accepted_reference_labels())
+
+
 def render_entry(entry: DiaryEntry) -> str:
     """
     Renderizza una DiaryEntry in markdown.
@@ -254,6 +327,7 @@ def render_entry(entry: DiaryEntry) -> str:
     Returns:
         Stringa markdown
     """
+    config = load_config()
     lines = []
 
     # Header
@@ -264,18 +338,18 @@ def render_entry(entry: DiaryEntry) -> str:
 
     lines.append("")
 
-    # Richiesto da (opzionale)
+    # Requested-by line (optional), label localised via config.
     if entry.richiesto_da:
-        lines.append(f"*-Richiesto da {entry.richiesto_da}-*")
+        lines.append(f"*-{config.section_requested_by} {entry.richiesto_da}-*")
         lines.append("")
 
     # Contenuto
     lines.append(entry.contenuto)
 
-    # Riferimenti (se non gia' presenti nel contenuto)
-    if entry.riferimenti and "**Riferimenti:**" not in entry.contenuto:
+    # References block (skip if already present in content, in any accepted label).
+    if entry.riferimenti and not _content_has_references(entry.contenuto):
         lines.append("")
-        lines.append("**Riferimenti:**")
+        lines.append(f"**{config.section_references}:**")
         for key, value in entry.riferimenti.items():
             lines.append(f"- {key.title()}: {value}")
 
@@ -320,8 +394,10 @@ def render_diary_file(diary: DiaryFile) -> str:
 
 
 def extract_projects(content: str) -> list[str]:
-    """
-    Estrae i nomi dei progetti dalle entry.
+    """Extract unique project names from H3 entry headings.
+
+    Uses the same fence-aware segmentation as parse_entries so that '### '
+    lines inside fenced code blocks are not mistaken for project headings.
 
     Args:
         content: Contenuto markdown del file
@@ -329,14 +405,13 @@ def extract_projects(content: str) -> list[str]:
     Returns:
         Lista di nomi di progetti unici
     """
-    projects = []
-    for line in content.split("\n"):
-        if line.startswith("### "):
-            header = line[4:].strip()
-            if " - " in header:
-                project = header.split(" - ", 1)[0].strip()
-            else:
-                project = header.strip()
-            if project and project not in projects:
-                projects.append(project)
+    projects: list[str] = []
+    for part in _split_entries_respecting_fences(content):
+        first_line = part.split("\n", 1)[0]
+        if not first_line.startswith("### "):
+            continue
+        header = first_line[4:].strip()
+        project = header.split(" - ", 1)[0].strip() if " - " in header else header.strip()
+        if project and project not in projects:
+            projects.append(project)
     return projects

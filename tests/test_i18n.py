@@ -11,7 +11,15 @@ import pytest
 
 from mcp_cronos.i18n import LANGUAGES, LanguagePack, get_language_pack
 
-REQUIRED_SECTION_KEYS = {"entries", "blockers", "day_summary", "tech_summary", "standup_message"}
+REQUIRED_SECTION_KEYS = {
+    "entries",
+    "blockers",
+    "day_summary",
+    "tech_summary",
+    "standup_message",
+    "references",
+    "requested_by",
+}
 REQUIRED_TEMPORAL_KEYS = {"yesterday", "day_before", "last_weekday", "from_to"}
 
 
@@ -76,8 +84,18 @@ class TestItalianPack:
 
     def test_months_values(self):
         expected = [
-            "Gennaio", "Febbraio", "Marzo", "Aprile", "Maggio", "Giugno",
-            "Luglio", "Agosto", "Settembre", "Ottobre", "Novembre", "Dicembre",
+            "Gennaio",
+            "Febbraio",
+            "Marzo",
+            "Aprile",
+            "Maggio",
+            "Giugno",
+            "Luglio",
+            "Agosto",
+            "Settembre",
+            "Ottobre",
+            "Novembre",
+            "Dicembre",
         ]
         assert self.pack.months == expected
 
@@ -103,6 +121,8 @@ class TestItalianPack:
         assert self.pack.sections["day_summary"] == "Riassunto della giornata"
         assert self.pack.sections["tech_summary"] == "Riassunto tecnico"
         assert self.pack.sections["standup_message"] == "Messaggio per lo standup"
+        assert self.pack.sections["references"] == "Riferimenti"
+        assert self.pack.sections["requested_by"] == "Richiesto da"
 
     def test_blockers_default(self):
         assert self.pack.blockers_default == "Nessuno"
@@ -150,8 +170,18 @@ class TestEnglishPack:
 
     def test_months_values(self):
         expected = [
-            "January", "February", "March", "April", "May", "June",
-            "July", "August", "September", "October", "November", "December",
+            "January",
+            "February",
+            "March",
+            "April",
+            "May",
+            "June",
+            "July",
+            "August",
+            "September",
+            "October",
+            "November",
+            "December",
         ]
         assert self.pack.months == expected
 
@@ -177,6 +207,8 @@ class TestEnglishPack:
         assert self.pack.sections["day_summary"] == "Daily summary"
         assert self.pack.sections["tech_summary"] == "Technical summary"
         assert self.pack.sections["standup_message"] == "Standup message"
+        assert self.pack.sections["references"] == "References"
+        assert self.pack.sections["requested_by"] == "Requested by"
 
     def test_blockers_default(self):
         assert self.pack.blockers_default == "None"

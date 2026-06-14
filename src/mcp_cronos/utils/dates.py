@@ -172,9 +172,7 @@ def get_raw_path(file_date: date, diario_path: Optional[Path] = None) -> Path:
     return get_day_folder_path(file_date, diario_path) / "raw.md"
 
 
-def get_fine_giornata_path(
-    file_date: date, diario_path: Optional[Path] = None
-) -> Path:
+def get_fine_giornata_path(file_date: date, diario_path: Optional[Path] = None) -> Path:
     """
     Path del file `fine-giornata.md` nel nuovo layout (chiusura giornata).
 
@@ -213,9 +211,7 @@ def resolve_raw_path(file_date: date, diario_path: Optional[Path] = None) -> Pat
     return get_raw_path(file_date, diario_path)
 
 
-def resolve_fine_giornata_path(
-    file_date: date, diario_path: Optional[Path] = None
-) -> Path:
+def resolve_fine_giornata_path(file_date: date, diario_path: Optional[Path] = None) -> Path:
     """
     Path su cui scrivere/leggere la chiusura giornata.
 

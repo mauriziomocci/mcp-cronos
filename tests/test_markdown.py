@@ -8,8 +8,12 @@ extract_projects H3 parsing and deduplication.
 import pytest
 
 from mcp_cronos.config import _reset_config
-from mcp_cronos.utils.markdown import DiaryEntry, DiaryFile, extract_projects, parse_diary_content
-
+from mcp_cronos.utils.markdown import (
+    DiaryFile,
+    extract_projects,
+    parse_diary_content,
+    parse_entries,
+)
 
 # ---------------------------------------------------------------------------
 # Autouse fixture: reset config singleton before and after each test
@@ -207,3 +211,123 @@ class TestExtractProjects:
         content = "# Title\n## Section\n- bullet\nplain text\n"
         projects = extract_projects(content)
         assert projects == []
+
+
+def test_parse_entries_ignores_headings_inside_code_fence():
+    """A fenced code block containing a line starting with '### ' or a '---'
+    line must not be parsed as a new entry or as an entry terminator.
+
+    Guards the invariant that fenced content is opaque to entry segmentation.
+    """
+    content = (
+        "### MCP Cronos - Refactor parser\n\n"
+        "Intro paragraph.\n\n"
+        "```bash\n"
+        "### this is a shell comment, not a heading\n"
+        "echo hello\n"
+        "---\n"
+        "echo world\n"
+        "```\n\n"
+        "Closing paragraph.\n"
+    )
+
+    entries = parse_entries(content)
+
+    assert len(entries) == 1
+    assert entries[0].progetto == "MCP Cronos"
+    assert entries[0].descrizione == "Refactor parser"
+    assert "echo hello" in entries[0].contenuto
+    assert "echo world" in entries[0].contenuto
+    assert "Closing paragraph." in entries[0].contenuto
+
+
+def test_parse_entries_handles_nested_markdown_fences():
+    """A four-backtick fence wrapping markdown that contains a three-backtick
+    block must stay open across the inner fence, so a '### ' line inside the
+    outer fence is not parsed as a new entry."""
+    content = (
+        "### Cronos - Document fence fix\n\n"
+        "````markdown\n"
+        "```python\n"
+        "### class definition, not a heading\n"
+        "x = 1\n"
+        "```\n"
+        "````\n\n"
+        "Rest of entry.\n"
+    )
+
+    entries = parse_entries(content)
+
+    assert len(entries) == 1
+    assert entries[0].progetto == "Cronos"
+    assert "class definition" in entries[0].contenuto
+    assert "Rest of entry." in entries[0].contenuto
+
+
+def test_render_entry_uses_configured_labels_en(tmp_diario, config_toml_en):
+    from mcp_cronos.utils.markdown import DiaryEntry, render_entry
+
+    entry = DiaryEntry(
+        progetto="MCP Cronos",
+        descrizione="Localise labels",
+        contenuto="Body text.",
+        richiesto_da="Marco",
+        riferimenti={"repository": "mcp-cronos"},
+    )
+    rendered = render_entry(entry)
+
+    assert "*-Requested by Marco-*" in rendered
+    assert "**References:**" in rendered
+    assert "Riferimenti" not in rendered
+    assert "Richiesto da" not in rendered
+
+
+def test_parse_legacy_italian_references_under_english_config(tmp_diario, config_toml_en):
+    """A diary written with Italian labels must still parse its references and
+    requester even when the active language is English (no data migration)."""
+    content = (
+        "### SmarTicket - Fix login\n\n"
+        "*-Richiesto da Marco-*\n\n"
+        "Fixed timeout.\n\n"
+        "**Riferimenti:**\n"
+        "- Repository: smarticket-backend\n"
+        "- Branch: `fix/login`\n"
+    )
+    entries = parse_entries(content)
+
+    assert len(entries) == 1
+    assert entries[0].richiesto_da == "Marco"
+    assert entries[0].riferimenti is not None
+    assert entries[0].riferimenti.get("repository") == "smarticket-backend"
+
+
+def test_extract_projects_ignores_headings_inside_code_fence():
+    """extract_projects must not report '### ' lines inside a fenced code block
+    as project names."""
+    content = (
+        "### Real Project - desc\n\n"
+        "```bash\n"
+        "### not a project, just a shell comment\n"
+        "echo hi\n"
+        "```\n"
+    )
+    projects = extract_projects(content)
+
+    assert projects == ["Real Project"]
+
+
+def test_parse_english_references_under_english_config(tmp_diario, config_toml_en):
+    """References and requester written with English labels must parse under en."""
+    content = (
+        "### SmarTicket - Fix login\n\n"
+        "*-Requested by Marco-*\n\n"
+        "Fixed timeout.\n\n"
+        "**References:**\n"
+        "- Repository: smarticket-backend\n"
+    )
+    entries = parse_entries(content)
+
+    assert len(entries) == 1
+    assert entries[0].richiesto_da == "Marco"
+    assert entries[0].riferimenti is not None
+    assert entries[0].riferimenti.get("repository") == "smarticket-backend"
