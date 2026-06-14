@@ -280,3 +280,39 @@ def test_render_entry_uses_configured_labels_en(tmp_diario, config_toml_en):
     assert "**References:**" in rendered
     assert "Riferimenti" not in rendered
     assert "Richiesto da" not in rendered
+
+
+def test_parse_legacy_italian_references_under_english_config(tmp_diario, config_toml_en):
+    """A diary written with Italian labels must still parse its references and
+    requester even when the active language is English (no data migration)."""
+    content = (
+        "### SmarTicket - Fix login\n\n"
+        "*-Richiesto da Marco-*\n\n"
+        "Fixed timeout.\n\n"
+        "**Riferimenti:**\n"
+        "- Repository: smarticket-backend\n"
+        "- Branch: `fix/login`\n"
+    )
+    entries = parse_entries(content)
+
+    assert len(entries) == 1
+    assert entries[0].richiesto_da == "Marco"
+    assert entries[0].riferimenti is not None
+    assert entries[0].riferimenti.get("repository") == "smarticket-backend"
+
+
+def test_parse_english_references_under_english_config(tmp_diario, config_toml_en):
+    """References and requester written with English labels must parse under en."""
+    content = (
+        "### SmarTicket - Fix login\n\n"
+        "*-Requested by Marco-*\n\n"
+        "Fixed timeout.\n\n"
+        "**References:**\n"
+        "- Repository: smarticket-backend\n"
+    )
+    entries = parse_entries(content)
+
+    assert len(entries) == 1
+    assert entries[0].richiesto_da == "Marco"
+    assert entries[0].riferimenti is not None
+    assert entries[0].riferimenti.get("repository") == "smarticket-backend"

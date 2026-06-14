@@ -215,10 +215,15 @@ def parse_entries(content: str) -> list[DiaryEntry]:
         # Resto del contenuto
         contenuto_lines = lines[1:]
 
-        # Cerca "Richiesto da"
+        # Match the requester line for the configured label or the Italian
+        # legacy label, so diaries written before localisation still parse.
+        config = load_config()
+        labels = {config.section_requested_by, _LEGACY_REQUESTED_BY_LABEL}
+        label_alt = "|".join(re.escape(lbl) for lbl in labels)
+        requested_by_re = re.compile(rf"\*-(?:{label_alt}) (.+)-\*")
         richiesto_da = None
         for line in contenuto_lines:
-            match = re.match(r"\*-Richiesto da (.+)-\*", line.strip())
+            match = requested_by_re.match(line.strip())
             if match:
                 richiesto_da = match.group(1)
                 break
@@ -271,14 +276,15 @@ def extract_references(content: str) -> Optional[dict]:
     Returns:
         Dict con i riferimenti trovati, None se non presenti
     """
-    if "**Riferimenti:**" not in content:
+    ref_headers = {f"**{label}:**" for label in _accepted_reference_labels()}
+    if not any(h in content for h in ref_headers):
         return None
 
     refs = {}
     in_refs = False
 
     for line in content.split("\n"):
-        if "**Riferimenti:**" in line:
+        if any(h in line for h in ref_headers):
             in_refs = True
             continue
         if in_refs:
