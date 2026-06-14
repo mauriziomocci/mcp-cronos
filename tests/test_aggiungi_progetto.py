@@ -149,14 +149,17 @@ def test_aggiungi_a_progetto_autodetects_git(tmp_diario, tmp_path):
     (repo / "f.txt").write_text("x", encoding="utf-8")
     subprocess.run(["git", "-C", str(repo), "add", "."], check=True, capture_output=True)
     subprocess.run(
-        ["git", "-C", str(repo), "-c", "user.email=t@t", "-c", "user.name=t",
-         "commit", "-m", "i"],
-        check=True, capture_output=True,
+        ["git", "-C", str(repo), "-c", "user.email=t@t", "-c", "user.name=t", "commit", "-m", "i"],
+        check=True,
+        capture_output=True,
     )
 
     result = aggiungi_a_progetto(
-        progetto="P", titolo_fase="F", contenuto="C",
-        data="2026-04-09", working_dir=str(repo),
+        progetto="P",
+        titolo_fase="F",
+        contenuto="C",
+        data="2026-04-09",
+        working_dir=str(repo),
     )
     content = Path(result["file"]).read_text(encoding="utf-8")
     assert "projrepo" in content

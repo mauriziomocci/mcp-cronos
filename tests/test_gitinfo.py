@@ -8,9 +8,20 @@ def _init_repo(path, branch="feature-x"):
     (path / "file.txt").write_text("x", encoding="utf-8")
     subprocess.run(["git", "-C", str(path), "add", "."], check=True, capture_output=True)
     subprocess.run(
-        ["git", "-C", str(path), "-c", "user.email=t@t", "-c", "user.name=t",
-         "commit", "-m", "init"],
-        check=True, capture_output=True,
+        [
+            "git",
+            "-C",
+            str(path),
+            "-c",
+            "user.email=t@t",
+            "-c",
+            "user.name=t",
+            "commit",
+            "-m",
+            "init",
+        ],
+        check=True,
+        capture_output=True,
     )
 
 
