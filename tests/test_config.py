@@ -411,3 +411,31 @@ def test_config_exposes_reference_labels_en(tmp_diario, config_toml_en):
     config = load_config()
     assert config.section_references == "References"
     assert config.section_requested_by == "Requested by"
+
+
+# ---------------------------------------------------------------------------
+# Calendar settings
+# ---------------------------------------------------------------------------
+
+
+def test_config_calendar_defaults(tmp_diario):
+    from mcp_cronos.config import load_config
+
+    config = load_config()
+    assert config.calendar_country == "IT"
+    assert config.calendar_extra_holidays == []
+
+
+def test_config_calendar_overrides(tmp_diario):
+    (tmp_diario / "cronos.toml").write_text(
+        '[cronos]\ngit = false\n\n'
+        '[cronos.calendar]\ncountry = "FR"\n'
+        'extra_holidays = ["2026-12-07", "2026-08-14"]\n',
+        encoding="utf-8",
+    )
+    from mcp_cronos.config import _reset_config, load_config
+
+    _reset_config()
+    config = load_config()
+    assert config.calendar_country == "FR"
+    assert config.calendar_extra_holidays == ["2026-12-07", "2026-08-14"]

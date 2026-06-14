@@ -77,6 +77,8 @@ class CronosConfig:
     section_standup_message: str
     section_references: str
     section_requested_by: str
+    calendar_country: str
+    calendar_extra_holidays: list[str]
     blockers_default: str
     title_format: str
     git_enabled: bool
@@ -220,6 +222,14 @@ def load_config() -> CronosConfig:
     auto_push: bool = bool(user_git.get("auto_push", True))
     commit_message: str = user_git.get("commit_message", "diario: fine giornata {date}")
 
+    # Calendar settings: national-holiday country code + user extra holidays.
+    user_calendar: dict[str, Any] = cronos_section.get("calendar", {})
+    calendar_country: str = user_calendar.get("country", "IT")
+    raw_extra = user_calendar.get("extra_holidays", [])
+    calendar_extra_holidays: list[str] = (
+        [str(x) for x in raw_extra] if isinstance(raw_extra, list) else []
+    )
+
     _config = CronosConfig(
         lang=lang,
         section_entries=section_entries,
@@ -229,6 +239,8 @@ def load_config() -> CronosConfig:
         section_standup_message=section_standup_message,
         section_references=section_references,
         section_requested_by=section_requested_by,
+        calendar_country=calendar_country,
+        calendar_extra_holidays=calendar_extra_holidays,
         blockers_default=pack.blockers_default,
         title_format=title_format,
         git_enabled=git_enabled,
