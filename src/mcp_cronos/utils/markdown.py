@@ -15,6 +15,11 @@ from typing import Optional
 
 from mcp_cronos.config import load_config
 
+# Italian default labels kept for backward compatibility: every diary written
+# before label localisation used these literals, regardless of language.
+_LEGACY_REFERENCES_LABEL = "Riferimenti"
+_LEGACY_REQUESTED_BY_LABEL = "Richiesto da"
+
 
 @dataclass
 class DiaryEntry:
@@ -187,6 +192,14 @@ def parse_entries(content: str) -> list[DiaryEntry]:
 
     entries = []
 
+    # Build the requester-line regex once per call (not per entry).
+    # It accepts both the configured label and the Italian legacy label so that
+    # diaries written before localisation still parse correctly.
+    _config = load_config()
+    _labels = {_config.section_requested_by, _LEGACY_REQUESTED_BY_LABEL}
+    _label_alt = "|".join(re.escape(lbl) for lbl in _labels)
+    requested_by_re = re.compile(rf"\*-(?:{_label_alt}) (.+)-\*")
+
     # Split per H3 (###) ignorando le righe dentro blocchi di codice fenced.
     # Un fence (``` o ~~~) puo' contenere righe '### ...' o '---' che NON sono
     # confini di entry: una segmentazione regex naive le tratterebbe come tali.
@@ -215,12 +228,6 @@ def parse_entries(content: str) -> list[DiaryEntry]:
         # Resto del contenuto
         contenuto_lines = lines[1:]
 
-        # Match the requester line for the configured label or the Italian
-        # legacy label, so diaries written before localisation still parse.
-        config = load_config()
-        labels = {config.section_requested_by, _LEGACY_REQUESTED_BY_LABEL}
-        label_alt = "|".join(re.escape(lbl) for lbl in labels)
-        requested_by_re = re.compile(rf"\*-(?:{label_alt}) (.+)-\*")
         richiesto_da = None
         for line in contenuto_lines:
             match = requested_by_re.match(line.strip())
@@ -297,12 +304,6 @@ def extract_references(content: str) -> Optional[dict]:
                 break
 
     return refs if refs else None
-
-
-# Italian default labels kept for backward compatibility: every diary written
-# before label localisation used these literals, regardless of language.
-_LEGACY_REFERENCES_LABEL = "Riferimenti"
-_LEGACY_REQUESTED_BY_LABEL = "Richiesto da"
 
 
 def _accepted_reference_labels() -> set[str]:

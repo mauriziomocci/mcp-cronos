@@ -31,18 +31,21 @@ class Entry:
     ```
     ### {progetto} - {descrizione}
 
-    {*-Richiesto da {richiesto_da}-* se presente}
+    {*-{requested_by label} {richiesto_da}-* se presente}
 
     {paragrafo_intro}
 
     {contenuto}
 
-    **Riferimenti:**
+    **{references label}:**
     - Repository: {repo}
     - Branch: `{branch}`
     - Jira: [{ticket}]({url})
     - GitLab MR: [MR !{numero}]({url})
     ```
+
+    Label text for the requested-by line and the references block is taken from
+    the active language configuration.
     """
 
     progetto: str
