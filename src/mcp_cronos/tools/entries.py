@@ -24,7 +24,7 @@ from mcp_cronos.utils.gitinfo import detect_git_info
 def aggiungi_entry(
     progetto: str,
     descrizione: str,
-    paragrafo_intro: str,
+    paragrafo_intro: str = "",
     contenuto: str = "",
     richiesto_da: Optional[str] = None,
     repository: Optional[str] = None,
@@ -45,7 +45,7 @@ def aggiungi_entry(
     Args:
         progetto: Nome del progetto (es. "SmarTicket", "MCP Teseo")
         descrizione: Breve descrizione del lavoro (es. "Fix bug autenticazione")
-        paragrafo_intro: Paragrafo introduttivo che riassume cosa e' stato fatto
+        paragrafo_intro: Paragrafo introduttivo che riassume cosa e' stato fatto (opzionale, default "")
         contenuto: Contenuto aggiuntivo (sottosezioni, bullet points, codice)
         richiesto_da: Nome della persona che ha richiesto il lavoro (opzionale)
         repository: Nome del repository (opzionale)

@@ -209,3 +209,11 @@ class TestCreaTemplateVuoto:
         """crea_template_vuoto output ends with a trailing newline."""
         result = crea_template_vuoto(date(2026, 4, 9))
         assert result.endswith("\n")
+
+
+def test_entry_to_markdown_skips_empty_intro():
+    from mcp_cronos.templates import Entry
+
+    md = Entry(progetto="P", descrizione="D", paragrafo_intro="").to_markdown()
+    assert md.startswith("### P - D")
+    assert "\n\n\n" not in md

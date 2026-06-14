@@ -60,7 +60,7 @@ Il titolo del file segue il formato "Per lo Stand-up {Giorno+1} {Mese} {Anno}".
 Parametri:
 - progetto (str, required): Nome del progetto (es. "SmarTicket", "MCP Teseo")
 - descrizione (str, required): Breve descrizione del lavoro (es. "Fix bug autenticazione")
-- paragrafo_intro (str, required): Paragrafo introduttivo che riassume cosa e' stato fatto
+- paragrafo_intro (str, optional): Paragrafo introduttivo che riassume cosa e' stato fatto
 - contenuto (str, optional): Contenuto aggiuntivo (sottosezioni, bullet points, codice)
 - richiesto_da (str, optional): Nome della persona che ha richiesto il lavoro
 - repository (str, optional): Nome del repository (se omesso viene rilevato da git)
@@ -78,7 +78,10 @@ Restituisce: Conferma dell'operazione con path del file e dettagli.""",
             "properties": {
                 "progetto": {"type": "string", "description": "Nome del progetto"},
                 "descrizione": {"type": "string", "description": "Breve descrizione del lavoro"},
-                "paragrafo_intro": {"type": "string", "description": "Paragrafo introduttivo"},
+                "paragrafo_intro": {
+                    "type": "string",
+                    "description": "Paragrafo introduttivo (opzionale, omettere per lasciare vuoto)",
+                },
                 "contenuto": {"type": "string", "description": "Contenuto aggiuntivo (opzionale)"},
                 "richiesto_da": {
                     "type": "string",
@@ -105,7 +108,7 @@ Restituisce: Conferma dell'operazione con path del file e dettagli.""",
                     ),
                 },
             },
-            "required": ["progetto", "descrizione", "paragrafo_intro"],
+            "required": ["progetto", "descrizione"],
         },
     ),
     Tool(
@@ -553,7 +556,7 @@ async def call_tool(name: str, arguments: dict):
             result = aggiungi_entry(
                 progetto=arguments["progetto"],
                 descrizione=arguments["descrizione"],
-                paragrafo_intro=arguments["paragrafo_intro"],
+                paragrafo_intro=arguments.get("paragrafo_intro", ""),
                 contenuto=arguments.get("contenuto", ""),
                 richiesto_da=arguments.get("richiesto_da"),
                 repository=arguments.get("repository"),

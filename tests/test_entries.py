@@ -203,3 +203,14 @@ def test_aggiungi_entry_explicit_repository_wins(tmp_diario, tmp_path):
     content = Path(result["file"]).read_text(encoding="utf-8")
     assert "explicit-repo" in content
     assert "autorepo" not in content
+
+
+def test_aggiungi_entry_without_intro(tmp_diario):
+    from pathlib import Path
+
+    from mcp_cronos.tools.entries import aggiungi_entry
+
+    result = aggiungi_entry(progetto="P", descrizione="D", data="2026-04-09")
+    content = Path(result["file"]).read_text(encoding="utf-8")
+    assert "### P - D" in content
+    assert "\n\n\n" not in content
