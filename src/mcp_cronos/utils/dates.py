@@ -27,6 +27,7 @@ from typing import Optional
 
 from mcp_cronos.config import get_diario_path, load_config
 from mcp_cronos.i18n import get_language_pack
+from mcp_cronos.utils.workdays import is_working_day
 
 
 def get_today() -> date:
@@ -36,30 +37,46 @@ def get_today() -> date:
 
 def get_next_working_day(from_date: date) -> date:
     """
-    Restituisce il prossimo giorno lavorativo (lun-ven) dopo `from_date`.
+    Return the next working day strictly after from_date.
 
-    Regole:
-    - lunedi-giovedi -> giorno successivo
-    - venerdi -> lunedi della settimana successiva (+3 giorni)
-    - sabato -> lunedi (+2 giorni)
-    - domenica -> lunedi (+1 giorno)
+    Skips weekends and holidays by advancing one day at a time until a working
+    day is found. Naturally handles holiday clusters (e.g. 25-26 December) and
+    user-configured extra holidays. The 366-iteration cap is a safety bound
+    against a pathological config that marks every day as a holiday.
 
     Args:
-        from_date: Data di partenza.
+        from_date: Starting date.
 
     Returns:
-        Data del prossimo giorno lavorativo.
+        Date of the next working day.
     """
-    weekday = from_date.weekday()
-    if weekday == 4:  # Friday
-        delta = 3
-    elif weekday == 5:  # Saturday
-        delta = 2
-    elif weekday == 6:  # Sunday
-        delta = 1
-    else:
-        delta = 1
-    return from_date + timedelta(days=delta)
+    candidate = from_date + timedelta(days=1)
+    for _ in range(366):
+        if is_working_day(candidate):
+            return candidate
+        candidate += timedelta(days=1)
+    return candidate
+
+
+def get_previous_working_day(from_date: date) -> date:
+    """
+    Return the most recent working day strictly before from_date.
+
+    Mirror of get_next_working_day: steps backward one day at a time, skipping
+    weekends and holidays, with the same 366-iteration safety bound.
+
+    Args:
+        from_date: Starting date.
+
+    Returns:
+        Date of the previous working day.
+    """
+    candidate = from_date - timedelta(days=1)
+    for _ in range(366):
+        if is_working_day(candidate):
+            return candidate
+        candidate -= timedelta(days=1)
+    return candidate
 
 
 def parse_date(date_str: str) -> date:
