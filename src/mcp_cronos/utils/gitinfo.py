@@ -22,7 +22,7 @@ def _run_git(args: list[str], cwd: str) -> Optional[str]:
             text=True,
             check=True,
         )
-    except (FileNotFoundError, subprocess.CalledProcessError):
+    except (OSError, subprocess.CalledProcessError):
         return None
     return result.stdout.strip() or None
 
@@ -36,10 +36,13 @@ def detect_git_info(working_dir: Optional[str] = None) -> tuple[Optional[str], O
 
     Returns:
         (repository_name, branch). repository_name is the basename of the repo
-        top-level. Either element is None when it cannot be determined.
+        top-level. Either element is None when it cannot be determined. A
+        detached HEAD yields None for branch.
     """
     cwd = working_dir or os.getcwd()
     toplevel = _run_git(["rev-parse", "--show-toplevel"], cwd)
     branch = _run_git(["rev-parse", "--abbrev-ref", "HEAD"], cwd)
+    if branch == "HEAD":
+        branch = None
     repository = Path(toplevel).name if toplevel else None
     return repository, branch

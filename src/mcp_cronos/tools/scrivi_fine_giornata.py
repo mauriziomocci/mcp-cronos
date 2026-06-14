@@ -137,5 +137,8 @@ def scrivi_fine_giornata(
         "git": git_result,
     }
     if contenuto_todo is not None:
-        risultato["prepara_domani"] = prepara_domani(contenuto_todo)
+        try:
+            risultato["prepara_domani"] = prepara_domani(contenuto_todo)
+        except OSError as exc:
+            risultato["prepara_domani"] = {"successo": False, "errore": str(exc)}
     return risultato
