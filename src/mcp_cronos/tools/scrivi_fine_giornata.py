@@ -10,6 +10,7 @@ import subprocess
 from typing import Optional
 
 from mcp_cronos.config import get_diario_path, load_config
+from mcp_cronos.tools.prepara_domani import prepara_domani
 from mcp_cronos.utils.dates import (
     ensure_directory_exists,
     get_today,
@@ -96,6 +97,7 @@ def _git_commit_and_push(file_path, file_date) -> dict:
 def scrivi_fine_giornata(
     contenuto: str,
     data: Optional[str] = None,
+    contenuto_todo: Optional[str] = None,
 ) -> dict:
     """
     Writes the end-of-day file and commits/pushes it to the diary repository.
@@ -103,6 +105,9 @@ def scrivi_fine_giornata(
     Args:
         contenuto: Contenuto markdown completo del file (con tutte le sezioni)
         data: Data del file YYYY-MM-DD (default: oggi)
+        contenuto_todo: Se fornito, prepara la cartella del prossimo giorno
+            lavorativo con questo contenuto todo.md, richiamando prepara_domani.
+            Il risultato viene restituito sotto la chiave 'prepara_domani'.
 
     Returns:
         Dict con risultato operazione e stato git
@@ -123,7 +128,7 @@ def scrivi_fine_giornata(
     # Commit and push to diary repository
     git_result = _git_commit_and_push(file_path, file_date)
 
-    return {
+    risultato = {
         "successo": True,
         "file": str(file_path),
         "data": str(file_date),
@@ -131,3 +136,6 @@ def scrivi_fine_giornata(
         "messaggio": f"File di fine giornata scritto per {file_date}",
         "git": git_result,
     }
+    if contenuto_todo is not None:
+        risultato["prepara_domani"] = prepara_domani(contenuto_todo)
+    return risultato

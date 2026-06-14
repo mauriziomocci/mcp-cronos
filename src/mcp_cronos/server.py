@@ -428,8 +428,13 @@ seguendo le istruzioni ricevute, poi chiami questo tool per scriverlo.
 Parametri:
 - contenuto (str, required): Contenuto markdown completo del file
 - data (str, optional): Data YYYY-MM-DD (default: oggi)
+- contenuto_todo (str, optional): Se fornito, dopo la scrittura prepara la
+  cartella del prossimo giorno lavorativo con questo todo.md, richiamando
+  cronos_prepara_domani internamente. Il risultato viene restituito sotto
+  la chiave 'prepara_domani'.
 
-Restituisce: Conferma con path del file scritto.""",
+Restituisce: Conferma con path del file scritto, ed eventuale risultato di
+prepara_domani se contenuto_todo e' stato fornito.""",
         inputSchema={
             "type": "object",
             "properties": {
@@ -438,6 +443,13 @@ Restituisce: Conferma con path del file scritto.""",
                     "description": "Contenuto markdown completo del file",
                 },
                 "data": {"type": "string", "description": "Data YYYY-MM-DD (default: oggi)"},
+                "contenuto_todo": {
+                    "type": "string",
+                    "description": (
+                        "Se fornito, dopo la scrittura prepara la cartella del prossimo "
+                        "giorno lavorativo con questo todo.md (opzionale)"
+                    ),
+                },
             },
             "required": ["contenuto"],
         },
@@ -642,6 +654,7 @@ async def call_tool(name: str, arguments: dict):
             result = scrivi_fine_giornata(
                 contenuto=arguments["contenuto"],
                 data=arguments.get("data"),
+                contenuto_todo=arguments.get("contenuto_todo"),
             )
 
         elif name == "cronos_prepara_domani":
