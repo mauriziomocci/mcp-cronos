@@ -262,3 +262,21 @@ def test_parse_entries_handles_nested_markdown_fences():
     assert entries[0].progetto == "Cronos"
     assert "class definition" in entries[0].contenuto
     assert "Rest of entry." in entries[0].contenuto
+
+
+def test_render_entry_uses_configured_labels_en(tmp_diario, config_toml_en):
+    from mcp_cronos.utils.markdown import DiaryEntry, render_entry
+
+    entry = DiaryEntry(
+        progetto="MCP Cronos",
+        descrizione="Localise labels",
+        contenuto="Body text.",
+        richiesto_da="Marco",
+        riferimenti={"repository": "mcp-cronos"},
+    )
+    rendered = render_entry(entry)
+
+    assert "*-Requested by Marco-*" in rendered
+    assert "**References:**" in rendered
+    assert "Riferimenti" not in rendered
+    assert "Richiesto da" not in rendered

@@ -59,15 +59,16 @@ class Entry:
         Returns:
             Stringa markdown formattata
         """
+        config = load_config()
         lines = []
 
         # Header H3
         lines.append(f"### {self.progetto} - {self.descrizione}")
         lines.append("")
 
-        # Richiesto da (opzionale)
+        # Requested-by line (optional), label localised via config.
         if self.richiesto_da:
-            lines.append(f"*-Richiesto da {self.richiesto_da}-*")
+            lines.append(f"*-{config.section_requested_by} {self.richiesto_da}-*")
             lines.append("")
 
         # Paragrafo introduttivo
@@ -81,7 +82,7 @@ class Entry:
 
         # Riferimenti
         if self.riferimenti:
-            lines.append("**Riferimenti:**")
+            lines.append(f"**{config.section_references}:**")
             for ref in self.riferimenti:
                 if ref.url:
                     if ref.tipo.lower() == "branch":

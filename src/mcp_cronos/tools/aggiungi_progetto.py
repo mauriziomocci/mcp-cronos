@@ -144,10 +144,10 @@ def _aggiungi_fase(
     # Costruisci la sotto-sezione
     fase_lines = [f"\n\n#### {titolo_fase}\n"]
     if richiesto_da:
-        fase_lines.append(f"*-Richiesto da {richiesto_da}-*\n")
+        fase_lines.append(f"*-{config.section_requested_by} {richiesto_da}-*\n")
     fase_lines.append(contenuto)
     if riferimenti_lines:
-        fase_lines.append("\n**Riferimenti:**")
+        fase_lines.append(f"\n**{config.section_references}:**")
         fase_lines.extend(riferimenti_lines)
 
     fase_md = "\n".join(fase_lines)
@@ -170,12 +170,13 @@ def _crea_nuova_entry(
     file_path, file_date, progetto, titolo_fase, contenuto, richiesto_da, riferimenti_lines
 ):
     """Crea una nuova entry con il contenuto come prima fase."""
+    config = load_config()
     lines = [f"### {progetto} - {titolo_fase}\n"]
     if richiesto_da:
-        lines.append(f"*-Richiesto da {richiesto_da}-*\n")
+        lines.append(f"*-{config.section_requested_by} {richiesto_da}-*\n")
     lines.append(contenuto)
     if riferimenti_lines:
-        lines.append("\n**Riferimenti:**")
+        lines.append(f"\n**{config.section_references}:**")
         lines.extend(riferimenti_lines)
 
     entry_md = "\n".join(lines)

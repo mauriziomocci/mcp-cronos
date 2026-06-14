@@ -293,6 +293,23 @@ def extract_references(content: str) -> Optional[dict]:
     return refs if refs else None
 
 
+# Italian default labels kept for backward compatibility: every diary written
+# before label localisation used these literals, regardless of language.
+_LEGACY_REFERENCES_LABEL = "Riferimenti"
+_LEGACY_REQUESTED_BY_LABEL = "Richiesto da"
+
+
+def _accepted_reference_labels() -> set[str]:
+    """Reference labels the parser accepts: configured value + Italian legacy."""
+    config = load_config()
+    return {config.section_references, _LEGACY_REFERENCES_LABEL}
+
+
+def _content_has_references(content: str) -> bool:
+    """True if content already contains a references block in any accepted label."""
+    return any(f"**{label}:**" in content for label in _accepted_reference_labels())
+
+
 def render_entry(entry: DiaryEntry) -> str:
     """
     Renderizza una DiaryEntry in markdown.
@@ -303,6 +320,7 @@ def render_entry(entry: DiaryEntry) -> str:
     Returns:
         Stringa markdown
     """
+    config = load_config()
     lines = []
 
     # Header
@@ -313,18 +331,18 @@ def render_entry(entry: DiaryEntry) -> str:
 
     lines.append("")
 
-    # Richiesto da (opzionale)
+    # Requested-by line (optional), label localised via config.
     if entry.richiesto_da:
-        lines.append(f"*-Richiesto da {entry.richiesto_da}-*")
+        lines.append(f"*-{config.section_requested_by} {entry.richiesto_da}-*")
         lines.append("")
 
     # Contenuto
     lines.append(entry.contenuto)
 
-    # Riferimenti (se non gia' presenti nel contenuto)
-    if entry.riferimenti and "**Riferimenti:**" not in entry.contenuto:
+    # References block (skip if already present in content, in any accepted label).
+    if entry.riferimenti and not _content_has_references(entry.contenuto):
         lines.append("")
-        lines.append("**Riferimenti:**")
+        lines.append(f"**{config.section_references}:**")
         for key, value in entry.riferimenti.items():
             lines.append(f"- {key.title()}: {value}")
 
