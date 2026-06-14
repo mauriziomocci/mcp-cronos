@@ -207,3 +207,34 @@ class TestExtractProjects:
         content = "# Title\n## Section\n- bullet\nplain text\n"
         projects = extract_projects(content)
         assert projects == []
+
+
+def test_parse_entries_ignores_headings_inside_code_fence():
+    """A fenced code block containing a line starting with '### ' or a '---'
+    line must not be parsed as a new entry or as an entry terminator.
+
+    Documents the parser behaviour on fenced content. If this fails, the
+    parser is fence-fragile and Task 2 applies.
+    """
+    from mcp_cronos.utils.markdown import parse_entries
+
+    content = (
+        "### MCP Cronos - Refactor parser\n\n"
+        "Intro paragraph.\n\n"
+        "```bash\n"
+        "### this is a shell comment, not a heading\n"
+        "echo hello\n"
+        "---\n"
+        "echo world\n"
+        "```\n\n"
+        "Closing paragraph.\n"
+    )
+
+    entries = parse_entries(content)
+
+    assert len(entries) == 1
+    assert entries[0].progetto == "MCP Cronos"
+    assert entries[0].descrizione == "Refactor parser"
+    assert "echo hello" in entries[0].contenuto
+    assert "echo world" in entries[0].contenuto
+    assert "Closing paragraph." in entries[0].contenuto
