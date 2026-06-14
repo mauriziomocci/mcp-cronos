@@ -12,6 +12,7 @@ as-is because other modules import them directly.
 import os
 import sys
 from dataclasses import dataclass
+from datetime import date
 from pathlib import Path
 from typing import Any, Optional
 
@@ -77,6 +78,8 @@ class CronosConfig:
     section_standup_message: str
     section_references: str
     section_requested_by: str
+    calendar_country: str
+    calendar_extra_holidays: list[str]
     blockers_default: str
     title_format: str
     git_enabled: bool
@@ -220,6 +223,22 @@ def load_config() -> CronosConfig:
     auto_push: bool = bool(user_git.get("auto_push", True))
     commit_message: str = user_git.get("commit_message", "diario: fine giornata {date}")
 
+    # Calendar settings: national-holiday country code + user extra holidays.
+    user_calendar: dict[str, Any] = cronos_section.get("calendar", {})
+    calendar_country: str = user_calendar.get("country", "IT")
+    raw_extra = user_calendar.get("extra_holidays", [])
+    calendar_extra_holidays: list[str] = []
+    if isinstance(raw_extra, list):
+        for x in raw_extra:
+            s = str(x)
+            try:
+                date.fromisoformat(s)
+            except ValueError as exc:
+                raise ValueError(
+                    f"[cronos.calendar] extra_holidays: invalid date {s!r} (expected YYYY-MM-DD)"
+                ) from exc
+            calendar_extra_holidays.append(s)
+
     _config = CronosConfig(
         lang=lang,
         section_entries=section_entries,
@@ -229,6 +248,8 @@ def load_config() -> CronosConfig:
         section_standup_message=section_standup_message,
         section_references=section_references,
         section_requested_by=section_requested_by,
+        calendar_country=calendar_country,
+        calendar_extra_holidays=calendar_extra_holidays,
         blockers_default=pack.blockers_default,
         title_format=title_format,
         git_enabled=git_enabled,

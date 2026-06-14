@@ -116,7 +116,15 @@ enabled = true
 auto_push = true
 # Commit message template. Supports {date} placeholder.
 commit_message = "diary: end of day {date}"
+
+[cronos.calendar]
+# ISO country code for the national holiday calendar (default "IT").
+country = "IT"
+# Extra dates treated as holidays (bridges, company closures), YYYY-MM-DD.
+extra_holidays = ["2026-12-07"]
 ```
+
+The next/previous working-day calculation used by `cronos_prepara_domani` and by the standup summary skips the configured country's national holidays plus `extra_holidays`, in addition to weekends.
 
 #### Custom Templates
 
@@ -501,7 +509,15 @@ enabled = true
 auto_push = true
 # Template del messaggio di commit. Supporta il placeholder {date}.
 commit_message = "diario: fine giornata {date}"
+
+[cronos.calendar]
+# Codice paese ISO per il calendario festivi nazionale (default "IT").
+country = "IT"
+# Date extra trattate come festive (ponti, chiusure aziendali), YYYY-MM-DD.
+extra_holidays = ["2026-12-07"]
 ```
+
+Il calcolo del prossimo/precedente giorno lavorativo usato da `cronos_prepara_domani` e dal riassunto standup esclude i festivi nazionali del paese configurato piu' le `extra_holidays`, oltre ai weekend.
 
 #### Template Personalizzati
 

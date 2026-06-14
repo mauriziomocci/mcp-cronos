@@ -299,3 +299,59 @@ def test_ensure_directory_exists_creates_parents(tmp_path):
     ensure_directory_exists(target)
     assert target.parent.exists()
     assert target.parent.is_dir()
+
+
+def test_get_next_working_day_skips_christmas_cluster(tmp_diario):
+    """Thu 2026-12-24 -> Mon 2026-12-28 (skips Christmas, Santo Stefano, weekend)."""
+    from mcp_cronos.utils.dates import get_next_working_day
+
+    assert get_next_working_day(date(2026, 12, 24)) == date(2026, 12, 28)
+
+
+def test_get_next_working_day_skips_easter_monday(tmp_diario):
+    """Fri 2026-04-03 -> Tue 2026-04-07 (skips weekend and Easter Monday 04-06)."""
+    from mcp_cronos.utils.dates import get_next_working_day
+
+    assert get_next_working_day(date(2026, 4, 3)) == date(2026, 4, 7)
+
+
+def test_get_next_working_day_skips_extra_holiday(tmp_diario):
+    """With 2026-12-07 as an extra holiday: Fri 2026-12-04 -> Wed 2026-12-09
+    (skips weekend, the configured 12-07, and Immacolata 12-08)."""
+    (tmp_diario / "cronos.toml").write_text(
+        '[cronos]\ngit = false\n\n[cronos.calendar]\nextra_holidays = ["2026-12-07"]\n',
+        encoding="utf-8",
+    )
+    from mcp_cronos.config import _reset_config
+    from mcp_cronos.utils.dates import get_next_working_day
+
+    _reset_config()
+    assert get_next_working_day(date(2026, 12, 4)) == date(2026, 12, 9)
+
+
+def test_get_previous_working_day_skips_christmas_cluster(tmp_diario):
+    """Mon 2026-12-28 -> Thu 2026-12-24 (skips weekend, Santo Stefano, Christmas)."""
+    from mcp_cronos.utils.dates import get_previous_working_day
+
+    assert get_previous_working_day(date(2026, 12, 28)) == date(2026, 12, 24)
+
+
+def test_get_previous_working_day_skips_extra_holiday(tmp_diario):
+    """With 2026-12-07 as an extra holiday: Wed 2026-12-09 -> Fri 2026-12-04
+    (skips Immacolata 12-08, the configured 12-07, and weekend)."""
+    (tmp_diario / "cronos.toml").write_text(
+        '[cronos]\ngit = false\n\n[cronos.calendar]\nextra_holidays = ["2026-12-07"]\n',
+        encoding="utf-8",
+    )
+    from mcp_cronos.config import _reset_config
+    from mcp_cronos.utils.dates import get_previous_working_day
+
+    _reset_config()
+    assert get_previous_working_day(date(2026, 12, 9)) == date(2026, 12, 4)
+
+
+def test_get_next_working_day_when_start_is_holiday(tmp_diario):
+    """Strictly-after: starting from Christmas (Fri 2026-12-25) -> Mon 2026-12-28."""
+    from mcp_cronos.utils.dates import get_next_working_day
+
+    assert get_next_working_day(date(2026, 12, 25)) == date(2026, 12, 28)

@@ -23,7 +23,7 @@ uv run ruff check src/mcp_cronos/
 
 ## Architecture
 
-**Stack**: Python 3.10+ | MCP SDK (mcp.server) | Pydantic 2.x | dataclasses | pathlib
+**Stack**: Python 3.10+ | MCP SDK (mcp.server) | Pydantic 2.x | dataclasses | pathlib | holidays
 
 **Package**: `src/mcp_cronos/`
 
@@ -63,6 +63,7 @@ src/mcp_cronos/
 - `CRONOS_DIARIO_PATH` (env var, mandatory): path to diary root directory
 - `CRONOS_CONFIG_PATH` (env var, optional): explicit path to config file
 - `cronos.toml` (searched in diary root or `~/.config/cronos/`): language, section names, git settings, template overrides
+- `[cronos.calendar]`: `country` (ISO code, default `"IT"`) and `extra_holidays` (list of `YYYY-MM-DD` strings). Working-day calculation in `cronos_prepara_domani` and standup last-working-day logic is holiday-aware: skips national holidays for the configured country plus `extra_holidays`, in addition to weekends.
 - Priority: user config > language defaults > Italian defaults
 
 **i18n**: built-in Italian (default) and English. Section names, month/weekday names, temporal strings, and blockers default are all language-aware. LLM templates use `{section_*}` placeholders resolved at runtime.
@@ -159,7 +160,7 @@ CHANGE: Technical explanation.
 ```
 
 Types: `feat`, `fix`, `docs`, `refactor`, `test`, `chore`
-Scope: module name (e.g. `server`, `entries`, `reader`, `standup`, `fine_giornata`, `consolida`, `cerca`, `settimana`, `dates`, `markdown`, `templates`, `config`, `leggi_todo`, `lista_mese`, `prepara_domani`, `i18n`, `template_loader`)
+Scope: module name (e.g. `server`, `entries`, `reader`, `standup`, `fine_giornata`, `consolida`, `cerca`, `settimana`, `dates`, `markdown`, `templates`, `config`, `leggi_todo`, `lista_mese`, `prepara_domani`, `i18n`, `template_loader`, `workdays`)
 
 **FORBIDDEN**: References to Claude/AI, emoji, Co-Authored-By, attribution lines.
 
