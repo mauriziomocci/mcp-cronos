@@ -428,7 +428,7 @@ def test_config_calendar_defaults(tmp_diario):
 
 def test_config_calendar_overrides(tmp_diario):
     (tmp_diario / "cronos.toml").write_text(
-        '[cronos]\ngit = false\n\n'
+        "[cronos]\ngit = false\n\n"
         '[cronos.calendar]\ncountry = "FR"\n'
         'extra_holidays = ["2026-12-07", "2026-08-14"]\n',
         encoding="utf-8",

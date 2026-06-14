@@ -42,20 +42,28 @@ def get_next_working_day(from_date: date) -> date:
     Skips weekends and holidays by advancing one day at a time until a working
     day is found. Naturally handles holiday clusters (e.g. 25-26 December) and
     user-configured extra holidays. The 366-iteration cap is a safety bound
-    against a pathological config that marks every day as a holiday.
+    against a pathological config that marks every day as a holiday; exhausting
+    it raises RuntimeError.
 
     Args:
         from_date: Starting date.
 
     Returns:
         Date of the next working day.
+
+    Raises:
+        RuntimeError: If no working day is found within 366 days (only reachable
+            with a pathological all-holidays config).
     """
     candidate = from_date + timedelta(days=1)
     for _ in range(366):
         if is_working_day(candidate):
             return candidate
         candidate += timedelta(days=1)
-    return candidate
+    raise RuntimeError(
+        f"No working day found within 366 days after {from_date}. "
+        "Check the [cronos.calendar] extra_holidays configuration."
+    )
 
 
 def get_previous_working_day(from_date: date) -> date:
@@ -63,20 +71,28 @@ def get_previous_working_day(from_date: date) -> date:
     Return the most recent working day strictly before from_date.
 
     Mirror of get_next_working_day: steps backward one day at a time, skipping
-    weekends and holidays, with the same 366-iteration safety bound.
+    weekends and holidays, with the same 366-iteration safety bound. Exhausting
+    the bound raises RuntimeError.
 
     Args:
         from_date: Starting date.
 
     Returns:
         Date of the previous working day.
+
+    Raises:
+        RuntimeError: If no working day is found within 366 days (only reachable
+            with a pathological all-holidays config).
     """
     candidate = from_date - timedelta(days=1)
     for _ in range(366):
         if is_working_day(candidate):
             return candidate
         candidate -= timedelta(days=1)
-    return candidate
+    raise RuntimeError(
+        f"No working day found within 366 days before {from_date}. "
+        "Check the [cronos.calendar] extra_holidays configuration."
+    )
 
 
 def parse_date(date_str: str) -> date:

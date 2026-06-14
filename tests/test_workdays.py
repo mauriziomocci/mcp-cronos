@@ -23,8 +23,7 @@ def test_is_holiday_false_on_plain_weekday(tmp_diario):
 
 def test_is_holiday_extra_from_config(tmp_diario):
     (tmp_diario / "cronos.toml").write_text(
-        '[cronos]\ngit = false\n\n'
-        '[cronos.calendar]\nextra_holidays = ["2026-07-20"]\n',
+        '[cronos]\ngit = false\n\n[cronos.calendar]\nextra_holidays = ["2026-07-20"]\n',
         encoding="utf-8",
     )
     from mcp_cronos.config import _reset_config

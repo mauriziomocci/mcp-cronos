@@ -12,6 +12,7 @@ as-is because other modules import them directly.
 import os
 import sys
 from dataclasses import dataclass
+from datetime import date
 from pathlib import Path
 from typing import Any, Optional
 
@@ -226,9 +227,17 @@ def load_config() -> CronosConfig:
     user_calendar: dict[str, Any] = cronos_section.get("calendar", {})
     calendar_country: str = user_calendar.get("country", "IT")
     raw_extra = user_calendar.get("extra_holidays", [])
-    calendar_extra_holidays: list[str] = (
-        [str(x) for x in raw_extra] if isinstance(raw_extra, list) else []
-    )
+    calendar_extra_holidays: list[str] = []
+    if isinstance(raw_extra, list):
+        for x in raw_extra:
+            s = str(x)
+            try:
+                date.fromisoformat(s)
+            except ValueError as exc:
+                raise ValueError(
+                    f"[cronos.calendar] extra_holidays: invalid date {s!r} (expected YYYY-MM-DD)"
+                ) from exc
+            calendar_extra_holidays.append(s)
 
     _config = CronosConfig(
         lang=lang,
