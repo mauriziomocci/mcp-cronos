@@ -149,3 +149,57 @@ def test_aggiungi_entry_appends_to_legacy_when_present(tmp_diario):
     assert "### Legacy - Append a file storico" in legacy.read_text(encoding="utf-8")
     # No per-day folder must be created when legacy exists
     assert not (tmp_diario / "2026" / "01" / "2026-01-21").exists()
+
+
+# ---------------------------------------------------------------------------
+# Git auto-detection
+# ---------------------------------------------------------------------------
+
+import subprocess  # noqa: E402  (placed after existing imports for patch compat)
+
+
+def _init_repo_e(path, branch="dev-branch"):
+    subprocess.run(["git", "init", "-b", branch, str(path)], check=True, capture_output=True)
+    (path / "f.txt").write_text("x", encoding="utf-8")
+    subprocess.run(["git", "-C", str(path), "add", "."], check=True, capture_output=True)
+    subprocess.run(
+        ["git", "-C", str(path), "-c", "user.email=t@t", "-c", "user.name=t",
+         "commit", "-m", "i"],
+        check=True, capture_output=True,
+    )
+
+
+def test_aggiungi_entry_autodetects_git(tmp_diario, tmp_path):
+    from pathlib import Path
+
+    from mcp_cronos.tools.entries import aggiungi_entry
+
+    repo = tmp_path / "autorepo"
+    repo.mkdir()
+    _init_repo_e(repo, branch="dev-branch")
+
+    result = aggiungi_entry(
+        progetto="P", descrizione="D", paragrafo_intro="intro",
+        data="2026-04-09", working_dir=str(repo),
+    )
+    content = Path(result["file"]).read_text(encoding="utf-8")
+    assert "autorepo" in content
+    assert "dev-branch" in content
+
+
+def test_aggiungi_entry_explicit_repository_wins(tmp_diario, tmp_path):
+    from pathlib import Path
+
+    from mcp_cronos.tools.entries import aggiungi_entry
+
+    repo = tmp_path / "autorepo"
+    repo.mkdir()
+    _init_repo_e(repo, branch="dev-branch")
+
+    result = aggiungi_entry(
+        progetto="P", descrizione="D", paragrafo_intro="intro", data="2026-04-09",
+        repository="explicit-repo", working_dir=str(repo),
+    )
+    content = Path(result["file"]).read_text(encoding="utf-8")
+    assert "explicit-repo" in content
+    assert "autorepo" not in content

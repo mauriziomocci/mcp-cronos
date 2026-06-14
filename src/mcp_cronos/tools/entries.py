@@ -18,6 +18,7 @@ from mcp_cronos.utils.dates import (
     get_today,
     parse_date,
 )
+from mcp_cronos.utils.gitinfo import detect_git_info
 
 
 def aggiungi_entry(
@@ -33,6 +34,7 @@ def aggiungi_entry(
     gitlab_mr: Optional[str] = None,
     gitlab_mr_url: Optional[str] = None,
     data: Optional[str] = None,
+    working_dir: Optional[str] = None,
 ) -> dict:
     """
     Aggiunge una nuova entry al diario di lavoro.
@@ -53,6 +55,7 @@ def aggiungi_entry(
         gitlab_mr: Numero MR GitLab (es. "!456") (opzionale)
         gitlab_mr_url: URL della MR GitLab (opzionale)
         data: Data del file in formato YYYY-MM-DD (opzionale, default oggi)
+        working_dir: Directory git da cui rilevare repository e branch se non forniti (opzionale)
 
     Returns:
         Dict con risultato operazione
@@ -65,6 +68,12 @@ def aggiungi_entry(
             return {"errore": str(e)}
     else:
         file_date = get_today()
+
+    # Auto-detect repository/branch from git when not provided explicitly.
+    if repository is None or branch is None:
+        det_repo, det_branch = detect_git_info(working_dir)
+        repository = repository or det_repo
+        branch = branch or det_branch
 
     # Costruisci riferimenti
     riferimenti = []

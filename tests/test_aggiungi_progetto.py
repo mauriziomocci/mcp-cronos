@@ -131,3 +131,33 @@ def test_aggiungi_fase_uses_english_labels(tmp_diario, config_toml_en):
     assert result["modalita"] == "aggiunto_a_esistente"
     assert "*-Requested by Marco-*" in content
     assert "**References:**" in content
+
+
+# ---------------------------------------------------------------------------
+# Git auto-detection
+# ---------------------------------------------------------------------------
+
+
+def test_aggiungi_a_progetto_autodetects_git(tmp_diario, tmp_path):
+    import subprocess
+
+    from mcp_cronos.tools.aggiungi_progetto import aggiungi_a_progetto
+
+    repo = tmp_path / "projrepo"
+    repo.mkdir()
+    subprocess.run(["git", "init", "-b", "qa", str(repo)], check=True, capture_output=True)
+    (repo / "f.txt").write_text("x", encoding="utf-8")
+    subprocess.run(["git", "-C", str(repo), "add", "."], check=True, capture_output=True)
+    subprocess.run(
+        ["git", "-C", str(repo), "-c", "user.email=t@t", "-c", "user.name=t",
+         "commit", "-m", "i"],
+        check=True, capture_output=True,
+    )
+
+    result = aggiungi_a_progetto(
+        progetto="P", titolo_fase="F", contenuto="C",
+        data="2026-04-09", working_dir=str(repo),
+    )
+    content = Path(result["file"]).read_text(encoding="utf-8")
+    assert "projrepo" in content
+    assert "qa" in content

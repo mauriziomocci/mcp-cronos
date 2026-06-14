@@ -12,6 +12,7 @@ from typing import Optional
 from mcp_cronos.config import load_config
 from mcp_cronos.templates import crea_template_vuoto
 from mcp_cronos.utils.dates import ensure_directory_exists, get_file_path, get_today, parse_date
+from mcp_cronos.utils.gitinfo import detect_git_info
 
 
 def aggiungi_a_progetto(
@@ -26,6 +27,7 @@ def aggiungi_a_progetto(
     gitlab_mr: Optional[str] = None,
     gitlab_mr_url: Optional[str] = None,
     data: Optional[str] = None,
+    working_dir: Optional[str] = None,
 ) -> dict:
     """
     Aggiunge contenuto a un'entry di progetto esistente o ne crea una nuova.
@@ -45,6 +47,7 @@ def aggiungi_a_progetto(
         gitlab_mr: Numero MR GitLab (opzionale)
         gitlab_mr_url: URL della MR GitLab (opzionale)
         data: Data del file YYYY-MM-DD (default: oggi)
+        working_dir: Directory git da cui rilevare repository e branch se non forniti (opzionale)
 
     Returns:
         Dict con risultato operazione
@@ -59,6 +62,12 @@ def aggiungi_a_progetto(
 
     file_path = get_file_path(file_date)
     ensure_directory_exists(file_path)
+
+    # Auto-detect repository/branch from git when not provided explicitly.
+    if repository is None or branch is None:
+        det_repo, det_branch = detect_git_info(working_dir)
+        repository = repository or det_repo
+        branch = branch or det_branch
 
     riferimenti_lines = _build_riferimenti_lines(
         repository, branch, jira_ticket, jira_url, gitlab_mr, gitlab_mr_url

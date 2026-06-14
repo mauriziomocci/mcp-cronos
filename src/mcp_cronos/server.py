@@ -63,13 +63,14 @@ Parametri:
 - paragrafo_intro (str, required): Paragrafo introduttivo che riassume cosa e' stato fatto
 - contenuto (str, optional): Contenuto aggiuntivo (sottosezioni, bullet points, codice)
 - richiesto_da (str, optional): Nome della persona che ha richiesto il lavoro
-- repository (str, optional): Nome del repository
-- branch (str, optional): Nome del branch
+- repository (str, optional): Nome del repository (se omesso viene rilevato da git)
+- branch (str, optional): Nome del branch (se omesso viene rilevato da git)
 - jira_ticket (str, optional): Codice ticket Jira (es. "SMART-123")
 - jira_url (str, optional): URL del ticket Jira
 - gitlab_mr (str, optional): Numero MR GitLab (es. "!456")
 - gitlab_mr_url (str, optional): URL della MR GitLab
 - data (str, optional): Data del file YYYY-MM-DD (default: oggi)
+- working_dir (str, optional): Directory git da cui rilevare repository e branch se non forniti
 
 Restituisce: Conferma dell'operazione con path del file e dettagli.""",
         inputSchema={
@@ -95,6 +96,13 @@ Restituisce: Conferma dell'operazione con path del file e dettagli.""",
                 "data": {
                     "type": "string",
                     "description": "Data YYYY-MM-DD (opzionale, default oggi)",
+                },
+                "working_dir": {
+                    "type": "string",
+                    "description": (
+                        "Directory di lavoro git da cui rilevare repository e branch "
+                        "se non forniti (opzionale)"
+                    ),
                 },
             },
             "required": ["progetto", "descrizione", "paragrafo_intro"],
@@ -366,13 +374,14 @@ Parametri:
 - titolo_fase (str, required): Titolo della sotto-sezione (es. "Fix bug login")
 - contenuto (str, required): Contenuto della sotto-sezione
 - richiesto_da (str, optional): Chi ha richiesto il lavoro
-- repository (str, optional): Nome del repository
-- branch (str, optional): Nome del branch
+- repository (str, optional): Nome del repository (se omesso viene rilevato da git)
+- branch (str, optional): Nome del branch (se omesso viene rilevato da git)
 - jira_ticket (str, optional): Codice ticket Jira
 - jira_url (str, optional): URL del ticket Jira
 - gitlab_mr (str, optional): Numero MR GitLab
 - gitlab_mr_url (str, optional): URL della MR GitLab
 - data (str, optional): Data YYYY-MM-DD (default: oggi)
+- working_dir (str, optional): Directory git da cui rilevare repository e branch se non forniti
 
 Restituisce: Conferma con modalita' (aggiunto_a_esistente o nuova_entry).""",
         inputSchema={
@@ -395,6 +404,13 @@ Restituisce: Conferma con modalita' (aggiunto_a_esistente o nuova_entry).""",
                     "description": "URL della MR GitLab (opzionale)",
                 },
                 "data": {"type": "string", "description": "Data YYYY-MM-DD (default: oggi)"},
+                "working_dir": {
+                    "type": "string",
+                    "description": (
+                        "Directory di lavoro git da cui rilevare repository e branch "
+                        "se non forniti (opzionale)"
+                    ),
+                },
             },
             "required": ["progetto", "titolo_fase", "contenuto"],
         },
@@ -547,6 +563,7 @@ async def call_tool(name: str, arguments: dict):
                 gitlab_mr=arguments.get("gitlab_mr"),
                 gitlab_mr_url=arguments.get("gitlab_mr_url"),
                 data=arguments.get("data"),
+                working_dir=arguments.get("working_dir"),
             )
 
         elif name == "cronos_leggi_diario":
@@ -615,6 +632,7 @@ async def call_tool(name: str, arguments: dict):
                 gitlab_mr=arguments.get("gitlab_mr"),
                 gitlab_mr_url=arguments.get("gitlab_mr_url"),
                 data=arguments.get("data"),
+                working_dir=arguments.get("working_dir"),
             )
 
         elif name == "cronos_scrivi_fine_giornata":
