@@ -1,5 +1,6 @@
 """Tests for the entries tool module (aggiungi_entry, imposta_bloccanti)."""
 
+import subprocess
 from datetime import date
 from unittest.mock import patch
 
@@ -149,3 +150,98 @@ def test_aggiungi_entry_appends_to_legacy_when_present(tmp_diario):
     assert "### Legacy - Append a file storico" in legacy.read_text(encoding="utf-8")
     # No per-day folder must be created when legacy exists
     assert not (tmp_diario / "2026" / "01" / "2026-01-21").exists()
+
+
+# ---------------------------------------------------------------------------
+# Git auto-detection
+# ---------------------------------------------------------------------------
+
+
+def _init_repo_e(path, branch="dev-branch"):
+    subprocess.run(["git", "init", "-b", branch, str(path)], check=True, capture_output=True)
+    (path / "f.txt").write_text("x", encoding="utf-8")
+    subprocess.run(["git", "-C", str(path), "add", "."], check=True, capture_output=True)
+    subprocess.run(
+        ["git", "-C", str(path), "-c", "user.email=t@t", "-c", "user.name=t", "commit", "-m", "i"],
+        check=True,
+        capture_output=True,
+    )
+
+
+def test_aggiungi_entry_autodetects_git(tmp_diario, tmp_path):
+    from pathlib import Path
+
+    from mcp_cronos.tools.entries import aggiungi_entry
+
+    repo = tmp_path / "autorepo"
+    repo.mkdir()
+    _init_repo_e(repo, branch="dev-branch")
+
+    result = aggiungi_entry(
+        progetto="P",
+        descrizione="D",
+        paragrafo_intro="intro",
+        data="2026-04-09",
+        working_dir=str(repo),
+    )
+    content = Path(result["file"]).read_text(encoding="utf-8")
+    assert "autorepo" in content
+    assert "dev-branch" in content
+
+
+def test_aggiungi_entry_explicit_repository_wins(tmp_diario, tmp_path):
+    from pathlib import Path
+
+    from mcp_cronos.tools.entries import aggiungi_entry
+
+    repo = tmp_path / "autorepo"
+    repo.mkdir()
+    _init_repo_e(repo, branch="dev-branch")
+
+    result = aggiungi_entry(
+        progetto="P",
+        descrizione="D",
+        paragrafo_intro="intro",
+        data="2026-04-09",
+        repository="explicit-repo",
+        working_dir=str(repo),
+    )
+    content = Path(result["file"]).read_text(encoding="utf-8")
+    assert "explicit-repo" in content
+    assert "autorepo" not in content
+    assert "dev-branch" in content
+
+
+def test_aggiungi_entry_without_intro(tmp_diario):
+    from pathlib import Path
+
+    from mcp_cronos.tools.entries import aggiungi_entry
+
+    result = aggiungi_entry(progetto="P", descrizione="D", data="2026-04-09")
+    content = Path(result["file"]).read_text(encoding="utf-8")
+    assert "### P - D" in content
+    assert "\n\n\n" not in content
+
+
+def test_aggiungi_entry_both_explicit_no_detection_needed(tmp_diario, tmp_path):
+    from pathlib import Path
+
+    from mcp_cronos.tools.entries import aggiungi_entry
+
+    # A plain (non-git) directory: if detection were wrongly relied upon, the
+    # explicit values would be missing. They must be present regardless.
+    plain = tmp_path / "plain"
+    plain.mkdir()
+
+    result = aggiungi_entry(
+        progetto="P",
+        descrizione="D",
+        paragrafo_intro="i",
+        data="2026-04-09",
+        repository="explicit-repo",
+        branch="explicit-branch",
+        working_dir=str(plain),
+    )
+    content = Path(result["file"]).read_text(encoding="utf-8")
+    assert "explicit-repo" in content
+    assert "explicit-branch" in content

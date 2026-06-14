@@ -60,16 +60,17 @@ Il titolo del file segue il formato "Per lo Stand-up {Giorno+1} {Mese} {Anno}".
 Parametri:
 - progetto (str, required): Nome del progetto (es. "SmarTicket", "MCP Teseo")
 - descrizione (str, required): Breve descrizione del lavoro (es. "Fix bug autenticazione")
-- paragrafo_intro (str, required): Paragrafo introduttivo che riassume cosa e' stato fatto
+- paragrafo_intro (str, optional): Paragrafo introduttivo che riassume cosa e' stato fatto
 - contenuto (str, optional): Contenuto aggiuntivo (sottosezioni, bullet points, codice)
 - richiesto_da (str, optional): Nome della persona che ha richiesto il lavoro
-- repository (str, optional): Nome del repository
-- branch (str, optional): Nome del branch
+- repository (str, optional): Nome del repository (se omesso viene rilevato da git)
+- branch (str, optional): Nome del branch (se omesso viene rilevato da git)
 - jira_ticket (str, optional): Codice ticket Jira (es. "SMART-123")
 - jira_url (str, optional): URL del ticket Jira
 - gitlab_mr (str, optional): Numero MR GitLab (es. "!456")
 - gitlab_mr_url (str, optional): URL della MR GitLab
 - data (str, optional): Data del file YYYY-MM-DD (default: oggi)
+- working_dir (str, optional): Directory git da cui rilevare repository e branch se non forniti
 
 Restituisce: Conferma dell'operazione con path del file e dettagli.""",
         inputSchema={
@@ -77,7 +78,10 @@ Restituisce: Conferma dell'operazione con path del file e dettagli.""",
             "properties": {
                 "progetto": {"type": "string", "description": "Nome del progetto"},
                 "descrizione": {"type": "string", "description": "Breve descrizione del lavoro"},
-                "paragrafo_intro": {"type": "string", "description": "Paragrafo introduttivo"},
+                "paragrafo_intro": {
+                    "type": "string",
+                    "description": "Paragrafo introduttivo (opzionale, omettere per lasciare vuoto)",
+                },
                 "contenuto": {"type": "string", "description": "Contenuto aggiuntivo (opzionale)"},
                 "richiesto_da": {
                     "type": "string",
@@ -96,8 +100,15 @@ Restituisce: Conferma dell'operazione con path del file e dettagli.""",
                     "type": "string",
                     "description": "Data YYYY-MM-DD (opzionale, default oggi)",
                 },
+                "working_dir": {
+                    "type": "string",
+                    "description": (
+                        "Directory di lavoro git da cui rilevare repository e branch "
+                        "se non forniti (opzionale)"
+                    ),
+                },
             },
-            "required": ["progetto", "descrizione", "paragrafo_intro"],
+            "required": ["progetto", "descrizione"],
         },
     ),
     Tool(
@@ -366,13 +377,14 @@ Parametri:
 - titolo_fase (str, required): Titolo della sotto-sezione (es. "Fix bug login")
 - contenuto (str, required): Contenuto della sotto-sezione
 - richiesto_da (str, optional): Chi ha richiesto il lavoro
-- repository (str, optional): Nome del repository
-- branch (str, optional): Nome del branch
+- repository (str, optional): Nome del repository (se omesso viene rilevato da git)
+- branch (str, optional): Nome del branch (se omesso viene rilevato da git)
 - jira_ticket (str, optional): Codice ticket Jira
 - jira_url (str, optional): URL del ticket Jira
 - gitlab_mr (str, optional): Numero MR GitLab
 - gitlab_mr_url (str, optional): URL della MR GitLab
 - data (str, optional): Data YYYY-MM-DD (default: oggi)
+- working_dir (str, optional): Directory git da cui rilevare repository e branch se non forniti
 
 Restituisce: Conferma con modalita' (aggiunto_a_esistente o nuova_entry).""",
         inputSchema={
@@ -395,6 +407,13 @@ Restituisce: Conferma con modalita' (aggiunto_a_esistente o nuova_entry).""",
                     "description": "URL della MR GitLab (opzionale)",
                 },
                 "data": {"type": "string", "description": "Data YYYY-MM-DD (default: oggi)"},
+                "working_dir": {
+                    "type": "string",
+                    "description": (
+                        "Directory di lavoro git da cui rilevare repository e branch "
+                        "se non forniti (opzionale)"
+                    ),
+                },
             },
             "required": ["progetto", "titolo_fase", "contenuto"],
         },
@@ -409,8 +428,13 @@ seguendo le istruzioni ricevute, poi chiami questo tool per scriverlo.
 Parametri:
 - contenuto (str, required): Contenuto markdown completo del file
 - data (str, optional): Data YYYY-MM-DD (default: oggi)
+- contenuto_todo (str, optional): Se fornito, dopo la scrittura prepara la
+  cartella del prossimo giorno lavorativo con questo todo.md, richiamando
+  cronos_prepara_domani internamente. Il risultato viene restituito sotto
+  la chiave 'prepara_domani'.
 
-Restituisce: Conferma con path del file scritto.""",
+Restituisce: Conferma con path del file scritto, ed eventuale risultato di
+prepara_domani se contenuto_todo e' stato fornito.""",
         inputSchema={
             "type": "object",
             "properties": {
@@ -419,6 +443,13 @@ Restituisce: Conferma con path del file scritto.""",
                     "description": "Contenuto markdown completo del file",
                 },
                 "data": {"type": "string", "description": "Data YYYY-MM-DD (default: oggi)"},
+                "contenuto_todo": {
+                    "type": "string",
+                    "description": (
+                        "Se fornito, dopo la scrittura prepara la cartella del prossimo "
+                        "giorno lavorativo con questo todo.md (opzionale)"
+                    ),
+                },
             },
             "required": ["contenuto"],
         },
@@ -537,7 +568,7 @@ async def call_tool(name: str, arguments: dict):
             result = aggiungi_entry(
                 progetto=arguments["progetto"],
                 descrizione=arguments["descrizione"],
-                paragrafo_intro=arguments["paragrafo_intro"],
+                paragrafo_intro=arguments.get("paragrafo_intro", ""),
                 contenuto=arguments.get("contenuto", ""),
                 richiesto_da=arguments.get("richiesto_da"),
                 repository=arguments.get("repository"),
@@ -547,6 +578,7 @@ async def call_tool(name: str, arguments: dict):
                 gitlab_mr=arguments.get("gitlab_mr"),
                 gitlab_mr_url=arguments.get("gitlab_mr_url"),
                 data=arguments.get("data"),
+                working_dir=arguments.get("working_dir"),
             )
 
         elif name == "cronos_leggi_diario":
@@ -615,12 +647,14 @@ async def call_tool(name: str, arguments: dict):
                 gitlab_mr=arguments.get("gitlab_mr"),
                 gitlab_mr_url=arguments.get("gitlab_mr_url"),
                 data=arguments.get("data"),
+                working_dir=arguments.get("working_dir"),
             )
 
         elif name == "cronos_scrivi_fine_giornata":
             result = scrivi_fine_giornata(
                 contenuto=arguments["contenuto"],
                 data=arguments.get("data"),
+                contenuto_todo=arguments.get("contenuto_todo"),
             )
 
         elif name == "cronos_prepara_domani":

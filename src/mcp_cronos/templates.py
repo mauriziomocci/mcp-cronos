@@ -74,9 +74,10 @@ class Entry:
             lines.append(f"*-{config.section_requested_by} {self.richiesto_da}-*")
             lines.append("")
 
-        # Paragrafo introduttivo
-        lines.append(self.paragrafo_intro)
-        lines.append("")
+        # Introductory paragraph (skip when empty to avoid a blank line run).
+        if self.paragrafo_intro:
+            lines.append(self.paragrafo_intro)
+            lines.append("")
 
         # Contenuto aggiuntivo
         if self.contenuto:

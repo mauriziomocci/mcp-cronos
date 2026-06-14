@@ -161,3 +161,31 @@ def test_scrivi_does_not_overwrite_raw_in_new_layout(tmp_diario, config_toml_it)
     assert fine_path.read_text(encoding="utf-8") == closure
     # raw.md must remain untouched
     assert "Detailed log." in raw_path.read_text(encoding="utf-8")
+
+
+def test_scrivi_fine_giornata_with_contenuto_todo_prepares_next_day(tmp_diario, config_toml_it):
+    from pathlib import Path
+
+    from mcp_cronos.config import _reset_config
+    from mcp_cronos.tools.scrivi_fine_giornata import scrivi_fine_giornata
+
+    _reset_config()
+    result = scrivi_fine_giornata(
+        contenuto="# Chiusura\n\nfatto.\n",
+        data="2026-04-09",
+        contenuto_todo="- [ ] domani task\n",
+    )
+    assert result["successo"] is True
+    assert "prepara_domani" in result
+    assert result["prepara_domani"]["successo"] is True
+    assert Path(result["prepara_domani"]["todo_file"]).exists()
+
+
+def test_scrivi_fine_giornata_without_todo_unchanged(tmp_diario, config_toml_it):
+    from mcp_cronos.config import _reset_config
+    from mcp_cronos.tools.scrivi_fine_giornata import scrivi_fine_giornata
+
+    _reset_config()
+    result = scrivi_fine_giornata(contenuto="# Chiusura\n\nfatto.\n", data="2026-04-09")
+    assert result["successo"] is True
+    assert "prepara_domani" not in result

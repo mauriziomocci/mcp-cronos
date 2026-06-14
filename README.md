@@ -139,18 +139,21 @@ Add a new entry to the daily diary. Creates the file and year/month directory st
 **Required parameters:**
 - `progetto` (string): Project name (e.g. `"SmarTicket"`, `"MCP Cronos"`)
 - `descrizione` (string): Short description of the work done (e.g. `"Fix auth bug"`)
-- `paragrafo_intro` (string): Introductory paragraph summarising what was done
 
 **Optional parameters:**
+- `paragrafo_intro` (string): Introductory paragraph summarising what was done (optional)
 - `contenuto` (string): Additional content — sub-sections, bullet points, code
 - `richiesto_da` (string): Name of the person who requested the work
-- `repository` (string): Repository name
-- `branch` (string): Branch name
+- `repository` (string): Repository name — auto-detected from git when omitted
+- `branch` (string): Branch name — auto-detected from git when omitted
+- `working_dir` (string): Git working directory to auto-detect repository and branch from when not provided (optional)
 - `jira_ticket` (string): Jira ticket code (e.g. `"SMART-123"`)
 - `jira_url` (string): Jira ticket URL
 - `gitlab_mr` (string): GitLab MR number (e.g. `"!456"`)
 - `gitlab_mr_url` (string): GitLab MR URL
 - `data` (string): Date in `YYYY-MM-DD` format (default: today)
+
+When `repository` or `branch` are omitted, the tool attempts to detect them from the git repository found in `working_dir` (or the current working directory if `working_dir` is not provided).
 
 **Returns:** Confirmation with file path and entry details.
 
@@ -271,13 +274,16 @@ Append a sub-section (H4) to an existing project entry in today's diary. Avoids 
 
 **Optional parameters:**
 - `richiesto_da` (string): Name of the person who requested the work
-- `repository` (string): Repository name
-- `branch` (string): Branch name
+- `repository` (string): Repository name — auto-detected from git when omitted
+- `branch` (string): Branch name — auto-detected from git when omitted
+- `working_dir` (string): Git working directory to auto-detect repository and branch from when not provided (optional)
 - `jira_ticket` (string): Jira ticket code
 - `jira_url` (string): Jira ticket URL
 - `gitlab_mr` (string): GitLab MR number
 - `gitlab_mr_url` (string): GitLab MR URL
 - `data` (string): Date `YYYY-MM-DD` (default: today)
+
+When `repository` or `branch` are omitted, the tool attempts to detect them from the git repository found in `working_dir` (or the current working directory if `working_dir` is not provided).
 
 **Returns:** Confirmation with mode (`aggiunto_a_esistente` or `nuova_entry`).
 
@@ -292,8 +298,9 @@ Write the end-of-day file with the fully generated content. Use this tool after 
 
 **Optional parameters:**
 - `data` (string): Date `YYYY-MM-DD` (default: today)
+- `contenuto_todo` (string): If provided, prepares the next working day's folder with this todo.md after writing (optional)
 
-**Returns:** Confirmation with the written file path.
+**Returns:** Confirmation with the written file path. When `contenuto_todo` is given, the result also includes a `prepara_domani` section with the paths of the next day's `todo.md` and `raw.md`.
 
 ---
 
@@ -532,18 +539,21 @@ Aggiunge una nuova entry al diario giornaliero. Crea il file e la struttura di d
 **Parametri obbligatori:**
 - `progetto` (string): Nome del progetto (es. `"SmarTicket"`, `"MCP Cronos"`)
 - `descrizione` (string): Breve descrizione del lavoro svolto (es. `"Fix bug autenticazione"`)
-- `paragrafo_intro` (string): Paragrafo introduttivo che riassume cosa e' stato fatto
 
 **Parametri opzionali:**
+- `paragrafo_intro` (string): Paragrafo introduttivo che riassume cosa e' stato fatto (opzionale)
 - `contenuto` (string): Contenuto aggiuntivo — sottosezioni, elenchi puntati, codice
 - `richiesto_da` (string): Nome della persona che ha richiesto il lavoro
-- `repository` (string): Nome del repository
-- `branch` (string): Nome del branch
+- `repository` (string): Nome del repository — rilevato automaticamente da git se omesso
+- `branch` (string): Nome del branch — rilevato automaticamente da git se omesso
+- `working_dir` (string): Directory di lavoro git da cui rilevare repository e branch se non forniti (opzionale)
 - `jira_ticket` (string): Codice ticket Jira (es. `"SMART-123"`)
 - `jira_url` (string): URL del ticket Jira
 - `gitlab_mr` (string): Numero MR GitLab (es. `"!456"`)
 - `gitlab_mr_url` (string): URL della MR GitLab
 - `data` (string): Data nel formato `YYYY-MM-DD` (predefinito: oggi)
+
+Quando `repository` o `branch` sono omessi, il tool tenta di rilevarli dal repository git trovato in `working_dir` (oppure dalla directory di lavoro corrente se `working_dir` non e' fornita).
 
 **Restituisce:** Conferma con path del file e dettagli dell'entry.
 
@@ -664,13 +674,16 @@ Aggiunge una sotto-sezione (H4) a un'entry di progetto esistente nel diario di o
 
 **Parametri opzionali:**
 - `richiesto_da` (string): Nome della persona che ha richiesto il lavoro
-- `repository` (string): Nome del repository
-- `branch` (string): Nome del branch
+- `repository` (string): Nome del repository — rilevato automaticamente da git se omesso
+- `branch` (string): Nome del branch — rilevato automaticamente da git se omesso
+- `working_dir` (string): Directory di lavoro git da cui rilevare repository e branch se non forniti (opzionale)
 - `jira_ticket` (string): Codice ticket Jira
 - `jira_url` (string): URL del ticket Jira
 - `gitlab_mr` (string): Numero MR GitLab
 - `gitlab_mr_url` (string): URL della MR GitLab
 - `data` (string): Data `YYYY-MM-DD` (predefinito: oggi)
+
+Quando `repository` o `branch` sono omessi, il tool tenta di rilevarli dal repository git trovato in `working_dir` (oppure dalla directory di lavoro corrente se `working_dir` non e' fornita).
 
 **Restituisce:** Conferma con modalita' (`aggiunto_a_esistente` o `nuova_entry`).
 
@@ -685,8 +698,9 @@ Scrive il file di fine giornata con il contenuto generato. Usare questo tool DOP
 
 **Parametri opzionali:**
 - `data` (string): Data `YYYY-MM-DD` (predefinito: oggi)
+- `contenuto_todo` (string): Se fornito, dopo la scrittura prepara la cartella del prossimo giorno lavorativo con questo todo.md (opzionale)
 
-**Restituisce:** Conferma con path del file scritto.
+**Restituisce:** Conferma con path del file scritto. Quando `contenuto_todo` e' fornito, il risultato include anche una sezione `prepara_domani` con i path di `todo.md` e `raw.md` del giorno successivo.
 
 ---
 
