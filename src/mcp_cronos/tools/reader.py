@@ -66,8 +66,11 @@ def leggi_diario(
         # Default: oggi
         dates_to_read = [today]
 
-    # Leggi i file
+    # Leggi i file. I giorni mancanti non producono un oggetto in `giorni`:
+    # finiscono come lista di date in `riepilogo.date_mancanti`, per mantenere
+    # l'output compatto su range lunghi e sparsi.
     risultati = []
+    date_mancanti: list[str] = []
     files_trovati = 0
     files_mancanti = 0
 
@@ -104,14 +107,7 @@ def leggi_diario(
                 )
         else:
             files_mancanti += 1
-            risultati.append(
-                {
-                    "data": str(d),
-                    "file": str(file_path),
-                    "esiste": False,
-                    "messaggio": "File non trovato",
-                }
-            )
+            date_mancanti.append(str(d))
 
     # Riepilogo
     return {
@@ -120,7 +116,11 @@ def leggi_diario(
             "a": str(dates_to_read[-1]),
             "giorni_totali": len(dates_to_read),
         },
-        "riepilogo": {"files_trovati": files_trovati, "files_mancanti": files_mancanti},
+        "riepilogo": {
+            "files_trovati": files_trovati,
+            "files_mancanti": files_mancanti,
+            "date_mancanti": date_mancanti,
+        },
         "giorni": risultati,
     }
 

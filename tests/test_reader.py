@@ -19,12 +19,13 @@ def test_reads_existing_file(sample_diary_it):
 
 
 def test_file_not_found(tmp_diario):
-    """leggi_diario returns a not-found marker when the file does not exist."""
+    """leggi_diario collects missing day in date_mancanti and emits no stub in giorni."""
     with patch("mcp_cronos.tools.reader.get_today", return_value=date(2026, 4, 9)):
         result = leggi_diario(data="2026-04-09")
 
+    assert result["giorni"] == []
     assert result["riepilogo"]["files_mancanti"] == 1
-    assert result["giorni"][0]["esiste"] is False
+    assert result["riepilogo"]["date_mancanti"] == ["2026-04-09"]
 
 
 def test_invalid_date_range(tmp_diario):
@@ -34,13 +35,15 @@ def test_invalid_date_range(tmp_diario):
 
 
 def test_reads_multiple_days(sample_diary_it, tmp_diario):
-    """leggi_diario reads a range of dates."""
+    """leggi_diario reads a range of dates; missing days land in date_mancanti."""
     with patch("mcp_cronos.tools.reader.get_today", return_value=date(2026, 4, 9)):
         result = leggi_diario(data_inizio="2026-04-08", data_fine="2026-04-09")
 
     assert result["periodo"]["giorni_totali"] == 2
     assert result["riepilogo"]["files_trovati"] == 1  # only 2026-04-09 exists
     assert result["riepilogo"]["files_mancanti"] == 1  # 2026-04-08 does not
+    assert len(result["giorni"]) == 1
+    assert "2026-04-08" in result["riepilogo"]["date_mancanti"]
 
 
 def test_lista_progetti(sample_diary_it):
@@ -58,3 +61,15 @@ def test_lista_progetti_empty(tmp_diario):
         result = lista_progetti(ultimi_giorni=7)
 
     assert result["totale_progetti"] == 0
+
+
+def test_leggi_diario_range_lists_missing_days_compactly(sample_diary_it):
+    """leggi_diario emits only found days in giorni and collects missing dates in date_mancanti."""
+    result = leggi_diario(data_inizio="2026-04-08", data_fine="2026-04-09")
+
+    assert len(result["giorni"]) == 1
+    assert result["giorni"][0]["data"] == "2026-04-09"
+    assert result["riepilogo"]["files_trovati"] == 1
+    assert result["riepilogo"]["files_mancanti"] == 1
+    assert result["riepilogo"]["date_mancanti"] == ["2026-04-08"]
+    assert all("esiste" not in g for g in result["giorni"])
