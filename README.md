@@ -157,7 +157,7 @@ Read diary content for a date or date range. All parameters are optional; when n
 - `data_inizio` + `data_fine` (strings): Date range `YYYY-MM-DD`
 - `ultimi_giorni` (integer): Read the last N days
 
-**Returns:** Diary content including entries, projects, and blockers.
+**Returns:** Diary content. `giorni` lists only days with content; `riepilogo` reports `files_trovati`, `files_mancanti`, and `date_mancanti` (dates with no file).
 
 ---
 
@@ -235,8 +235,9 @@ Full-text search across diary sources (raw entries, todo files, end-of-day files
 - `data_fine` (string): Search range end `YYYY-MM-DD`
 - `ultimi_giorni` (integer): Days to search (default: 90)
 - `tipo` (list[str]): Sources to search — `"raw"`, `"todo"`, `"chiusura"`. Default: all three.
+- `max_risultati` (int): Maximum number of results returned (default 50).
 
-**Returns:** List of matches with type (`raw`|`todo`|`chiusura`), date, and surrounding context.
+**Returns:** Total match count (`totale_risultati`), a `troncato` flag and `max_risultati` limit, and `risultati` (at most `max_risultati` matches, each with type, date, and context).
 
 ---
 
@@ -541,7 +542,7 @@ Legge il contenuto del diario per una data o un range di date. Tutti i parametri
 - `data_inizio` + `data_fine` (string): Range di date `YYYY-MM-DD`
 - `ultimi_giorni` (integer): Legge gli ultimi N giorni
 
-**Restituisce:** Contenuto del diario con entry, progetti e bloccanti.
+**Restituisce:** Contenuto del diario. `giorni` elenca solo i giorni con contenuto; `riepilogo` riporta `files_trovati`, `files_mancanti` e `date_mancanti` (le date prive di file).
 
 ---
 
@@ -619,8 +620,9 @@ Ricerca full-text nelle sorgenti del diario (entry raw, file todo, file di chius
 - `data_fine` (string): Fine range di ricerca `YYYY-MM-DD`
 - `ultimi_giorni` (integer): Giorni da cercare (predefinito: 90)
 - `tipo` (list[str]): Sorgenti da cercare — `"raw"`, `"todo"`, `"chiusura"`. Default: tutte e tre.
+- `max_risultati` (int): Numero massimo di risultati restituiti (default 50).
 
-**Restituisce:** Lista di match con tipo (`raw`|`todo`|`chiusura`), data e contesto circostante.
+**Restituisce:** Numero totale di match (`totale_risultati`), flag `troncato` e limite `max_risultati`, e `risultati` (al massimo `max_risultati` match, ciascuno con tipo, data e contesto).
 
 ---
 

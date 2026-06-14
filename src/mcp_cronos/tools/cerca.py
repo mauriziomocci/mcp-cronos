@@ -40,6 +40,7 @@ def cerca_nel_diario(
     data_fine: Optional[str] = None,
     ultimi_giorni: int = 90,
     tipo: Optional[list[str]] = None,
+    max_risultati: int = 50,
 ) -> dict:
     """
     Cerca un pattern testuale nei file del diario.
@@ -51,6 +52,9 @@ def cerca_nel_diario(
         ultimi_giorni: Giorni da cercare se non specificate le date (default 90).
         tipo: Lista di sorgenti da cercare fra "raw", "todo", "chiusura".
               Default: tutte e tre.
+        max_risultati: Numero massimo di risultati restituiti (default 50).
+            La ricerca trova tutti i match ma ne restituisce al piu' questo
+            numero; il totale trovato resta in `totale_risultati`.
 
     Returns:
         Dict con risultati della ricerca, ciascuno marcato col `tipo` di
@@ -98,14 +102,25 @@ def cerca_nel_diario(
                     get_fine_giornata_path(d), d, "chiusura", pattern, risultati
                 )
 
-    return {
+    max_risultati = max(0, max_risultati)
+    troncato = len(risultati) > max_risultati
+    output: dict = {
         "query": query,
         "periodo": {"da": str(start), "a": str(end)},
         "tipo": sorgenti,
         "files_cercati": files_cercati,
         "totale_risultati": len(risultati),
-        "risultati": risultati,
+        "max_risultati": max_risultati,
+        "troncato": troncato,
+        "risultati": risultati[:max_risultati],
     }
+    if troncato:
+        output["nota"] = (
+            f"Trovati {len(risultati)} match, mostrati i primi {max_risultati}. "
+            "Restringi il range di date, usa 'tipo' per filtrare le sorgenti, "
+            "o aumenta 'max_risultati'."
+        )
+    return output
 
 
 def _cerca_raw(d: date_cls, pattern: re.Pattern, risultati: list[dict]) -> int:
