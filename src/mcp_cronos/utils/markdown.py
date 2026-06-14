@@ -111,28 +111,39 @@ def parse_diary_content(content: str) -> DiaryFile:
 def _split_entries_respecting_fences(content: str) -> list[str]:
     """Split content into entry chunks at top-level '### ' headings only.
 
-    Lines inside fenced code blocks (delimited by ``` or ~~~) are treated as
-    opaque: a '### ' or '---' line inside a fence does not start or end an
-    entry. This prevents shell comments or diff markers in code samples from
-    being misread as diary structure.
+    Lines inside fenced code blocks are treated as opaque: a '### ' or '---'
+    line inside a fence does not start or end an entry. This prevents shell
+    comments or diff markers in code samples from being misread as diary
+    structure.
+
+    Fences follow CommonMark rules closely enough for diary content: a fence
+    opens on a line of at least three '`' or '~' characters; it closes only on
+    a later line of the same character, at least as long, with no trailing info
+    string. Tracking the exact fence length lets a longer outer fence (e.g. four
+    backticks wrapping markdown that contains a three-backtick block) survive an
+    inner fence instead of being closed by it.
     """
     parts: list[str] = []
     current: list[str] = []
-    in_fence = False
-    fence_marker = ""
+    fence_char = ""  # "`" or "~" while inside a fence, "" otherwise
+    fence_len = 0
 
     for line in content.split("\n"):
         stripped = line.lstrip()
-        is_fence_line = stripped.startswith("```") or stripped.startswith("~~~")
-        if is_fence_line:
-            marker = stripped[:3]
-            if not in_fence:
-                in_fence = True
-                fence_marker = marker
-            elif marker == fence_marker:
-                in_fence = False
-                fence_marker = ""
+        if stripped and stripped[0] in ("`", "~"):
+            ch = stripped[0]
+            run = len(stripped) - len(stripped.lstrip(ch))
+            if run >= 3:
+                if not fence_char:
+                    # Opening fence; an info string after the run is allowed.
+                    fence_char = ch
+                    fence_len = run
+                elif ch == fence_char and run >= fence_len and stripped[run:].strip() == "":
+                    # Closing fence: same char, at least as long, no info string.
+                    fence_char = ""
+                    fence_len = 0
 
+        in_fence = bool(fence_char)
         if not in_fence and line.startswith("### ") and current:
             parts.append("\n".join(current))
             current = [line]
