@@ -291,6 +291,7 @@ Parametri:
 - data_fine (str, optional): Data fine range YYYY-MM-DD
 - ultimi_giorni (int, optional): Giorni da cercare (default 90)
 - tipo (list[str], optional): Sorgenti da cercare. Valori: "raw", "todo", "chiusura". Default: tutte e tre.
+- max_risultati (int, optional): Numero massimo di risultati restituiti (default 50)
 
 Restituisce: Lista di match con tipo (raw|todo|chiusura), data, contesto. Per i match in raw include progetto e descrizione; per todo/chiusura include il path del file.""",
         inputSchema={
@@ -307,6 +308,10 @@ Restituisce: Lista di match con tipo (raw|todo|chiusura), data, contesto. Per i 
                     "type": "array",
                     "items": {"type": "string", "enum": ["raw", "todo", "chiusura"]},
                     "description": "Sorgenti da cercare (default: tutte e tre)",
+                },
+                "max_risultati": {
+                    "type": "integer",
+                    "description": "Numero massimo di risultati restituiti (default 50)",
                 },
             },
             "required": ["query"],
@@ -588,6 +593,7 @@ async def call_tool(name: str, arguments: dict):
                 data_fine=arguments.get("data_fine"),
                 ultimi_giorni=arguments.get("ultimi_giorni", 90),
                 tipo=arguments.get("tipo"),
+                max_risultati=arguments.get("max_risultati", 50),
             )
 
         elif name == "cronos_settimana":
