@@ -301,6 +301,21 @@ def test_parse_legacy_italian_references_under_english_config(tmp_diario, config
     assert entries[0].riferimenti.get("repository") == "smarticket-backend"
 
 
+def test_extract_projects_ignores_headings_inside_code_fence():
+    """extract_projects must not report '### ' lines inside a fenced code block
+    as project names."""
+    content = (
+        "### Real Project - desc\n\n"
+        "```bash\n"
+        "### not a project, just a shell comment\n"
+        "echo hi\n"
+        "```\n"
+    )
+    projects = extract_projects(content)
+
+    assert projects == ["Real Project"]
+
+
 def test_parse_english_references_under_english_config(tmp_diario, config_toml_en):
     """References and requester written with English labels must parse under en."""
     content = (

@@ -186,7 +186,6 @@ def _crea_nuova_entry(
     else:
         file_content = crea_template_vuoto(file_date)
 
-    config = load_config()
     escaped_blockers = re.escape(config.section_blockers)
     bloccanti_match = re.search(rf"\n## {escaped_blockers}\n", file_content)
     if bloccanti_match:

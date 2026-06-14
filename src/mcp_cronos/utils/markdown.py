@@ -394,8 +394,10 @@ def render_diary_file(diary: DiaryFile) -> str:
 
 
 def extract_projects(content: str) -> list[str]:
-    """
-    Estrae i nomi dei progetti dalle entry.
+    """Extract unique project names from H3 entry headings.
+
+    Uses the same fence-aware segmentation as parse_entries so that '### '
+    lines inside fenced code blocks are not mistaken for project headings.
 
     Args:
         content: Contenuto markdown del file
@@ -403,14 +405,13 @@ def extract_projects(content: str) -> list[str]:
     Returns:
         Lista di nomi di progetti unici
     """
-    projects = []
-    for line in content.split("\n"):
-        if line.startswith("### "):
-            header = line[4:].strip()
-            if " - " in header:
-                project = header.split(" - ", 1)[0].strip()
-            else:
-                project = header.strip()
-            if project and project not in projects:
-                projects.append(project)
+    projects: list[str] = []
+    for part in _split_entries_respecting_fences(content):
+        first_line = part.split("\n", 1)[0]
+        if not first_line.startswith("### "):
+            continue
+        header = first_line[4:].strip()
+        project = header.split(" - ", 1)[0].strip() if " - " in header else header.strip()
+        if project and project not in projects:
+            projects.append(project)
     return projects
