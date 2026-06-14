@@ -69,9 +69,9 @@ src/mcp_cronos/
 **i18n**: built-in Italian (default) and English. Section names, month/weekday names, temporal strings, and blockers default are all language-aware. LLM templates use `{section_*}` placeholders resolved at runtime.
 
 **Tool workflow**:
-- Daily entries: `cronos_aggiungi_entry` / `cronos_aggiungi_a_progetto` (append to existing)
+- Daily entries: `cronos_aggiungi_entry` / `cronos_aggiungi_a_progetto` (append to existing). Both tools auto-detect `repository` and `branch` from git when those parameters are omitted; pass `working_dir` to control which directory is inspected.
 - Reading: `cronos_leggi_diario` / `cronos_cerca` / `cronos_lista_progetti` / `cronos_settimana` / `cronos_leggi_todo` / `cronos_lista_mese`
-- End of day: `cronos_fine_giornata` -> LLM generates content -> `cronos_scrivi_fine_giornata` (+ git commit/push)
+- End of day: `cronos_fine_giornata` -> LLM generates content -> `cronos_scrivi_fine_giornata` (+ git commit/push). Pass `contenuto_todo` to `cronos_scrivi_fine_giornata` to prepare the next working day's folder in a single call, avoiding a separate `cronos_prepara_domani` invocation.
 - Consolidation: `cronos_consolida_diario` -> LLM rewrites -> file write
 - Standup: `cronos_riassunto_standup` -> LLM generates message
 
@@ -160,7 +160,7 @@ CHANGE: Technical explanation.
 ```
 
 Types: `feat`, `fix`, `docs`, `refactor`, `test`, `chore`
-Scope: module name (e.g. `server`, `entries`, `reader`, `standup`, `fine_giornata`, `consolida`, `cerca`, `settimana`, `dates`, `markdown`, `templates`, `config`, `leggi_todo`, `lista_mese`, `prepara_domani`, `i18n`, `template_loader`, `workdays`)
+Scope: module name (e.g. `server`, `entries`, `reader`, `standup`, `fine_giornata`, `consolida`, `cerca`, `settimana`, `dates`, `markdown`, `templates`, `config`, `leggi_todo`, `lista_mese`, `prepara_domani`, `i18n`, `template_loader`, `workdays`, `gitinfo`)
 
 **FORBIDDEN**: References to Claude/AI, emoji, Co-Authored-By, attribution lines.
 
