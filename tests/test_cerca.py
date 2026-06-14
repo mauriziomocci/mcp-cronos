@@ -171,8 +171,11 @@ def test_cerca_caps_results_and_reports_truncation(tmp_diario):
     )
 
     result = cerca_nel_diario(
-        query="widget", data_inizio="2026-04-09", data_fine="2026-04-09",
-        tipo=["raw"], max_risultati=2,
+        query="widget",
+        data_inizio="2026-04-09",
+        data_fine="2026-04-09",
+        tipo=["raw"],
+        max_risultati=2,
     )
 
     assert result["totale_risultati"] == 3
@@ -196,9 +199,41 @@ def test_cerca_no_truncation_under_limit(tmp_diario):
     )
 
     result = cerca_nel_diario(
-        query="widget", data_inizio="2026-04-09", data_fine="2026-04-09", tipo=["raw"],
+        query="widget",
+        data_inizio="2026-04-09",
+        data_fine="2026-04-09",
+        tipo=["raw"],
     )
 
+    assert result["totale_risultati"] == 1
     assert result["troncato"] is False
     assert result["max_risultati"] == 50
+    assert "nota" not in result
+
+
+def test_cerca_at_exact_limit_not_truncated(tmp_diario):
+    from mcp_cronos.tools.cerca import cerca_nel_diario
+
+    month_dir = tmp_diario / "2026" / "04"
+    month_dir.mkdir(parents=True, exist_ok=True)
+    (month_dir / "2026-04-09.md").write_text(
+        "# Per lo Stand-up - 10 Aprile 2026\n\n"
+        "## Cosa ho fatto ieri\n\n"
+        "### Alpha - widget\n\nwidget work\n\n---\n\n"
+        "### Beta - widget\n\nwidget work\n\n---\n\n"
+        "## Bloccanti\n\nNessuno\n",
+        encoding="utf-8",
+    )
+
+    result = cerca_nel_diario(
+        query="widget",
+        data_inizio="2026-04-09",
+        data_fine="2026-04-09",
+        tipo=["raw"],
+        max_risultati=2,
+    )
+
+    assert result["totale_risultati"] == 2
+    assert len(result["risultati"]) == 2
+    assert result["troncato"] is False
     assert "nota" not in result

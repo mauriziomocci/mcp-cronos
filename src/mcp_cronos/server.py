@@ -311,6 +311,7 @@ Restituisce: Lista di match con tipo (raw|todo|chiusura), data, contesto. Per i 
                 },
                 "max_risultati": {
                     "type": "integer",
+                    "minimum": 1,
                     "description": "Numero massimo di risultati restituiti (default 50)",
                 },
             },

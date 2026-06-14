@@ -102,6 +102,7 @@ def cerca_nel_diario(
                     get_fine_giornata_path(d), d, "chiusura", pattern, risultati
                 )
 
+    max_risultati = max(0, max_risultati)
     troncato = len(risultati) > max_risultati
     output: dict = {
         "query": query,
