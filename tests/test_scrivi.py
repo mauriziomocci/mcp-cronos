@@ -9,6 +9,7 @@ from unittest.mock import MagicMock, patch
 _scrivi_mod = sys.modules.get("mcp_cronos.tools.scrivi_fine_giornata")
 if _scrivi_mod is None:
     import importlib
+
     _scrivi_mod = importlib.import_module("mcp_cronos.tools.scrivi_fine_giornata")
 
 from mcp_cronos.tools.scrivi_fine_giornata import (  # noqa: E402

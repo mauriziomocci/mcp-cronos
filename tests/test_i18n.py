@@ -12,8 +12,13 @@ import pytest
 from mcp_cronos.i18n import LANGUAGES, LanguagePack, get_language_pack
 
 REQUIRED_SECTION_KEYS = {
-    "entries", "blockers", "day_summary", "tech_summary", "standup_message",
-    "references", "requested_by",
+    "entries",
+    "blockers",
+    "day_summary",
+    "tech_summary",
+    "standup_message",
+    "references",
+    "requested_by",
 }
 REQUIRED_TEMPORAL_KEYS = {"yesterday", "day_before", "last_weekday", "from_to"}
 
@@ -79,8 +84,18 @@ class TestItalianPack:
 
     def test_months_values(self):
         expected = [
-            "Gennaio", "Febbraio", "Marzo", "Aprile", "Maggio", "Giugno",
-            "Luglio", "Agosto", "Settembre", "Ottobre", "Novembre", "Dicembre",
+            "Gennaio",
+            "Febbraio",
+            "Marzo",
+            "Aprile",
+            "Maggio",
+            "Giugno",
+            "Luglio",
+            "Agosto",
+            "Settembre",
+            "Ottobre",
+            "Novembre",
+            "Dicembre",
         ]
         assert self.pack.months == expected
 
@@ -155,8 +170,18 @@ class TestEnglishPack:
 
     def test_months_values(self):
         expected = [
-            "January", "February", "March", "April", "May", "June",
-            "July", "August", "September", "October", "November", "December",
+            "January",
+            "February",
+            "March",
+            "April",
+            "May",
+            "June",
+            "July",
+            "August",
+            "September",
+            "October",
+            "November",
+            "December",
         ]
         assert self.pack.months == expected
 

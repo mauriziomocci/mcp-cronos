@@ -96,7 +96,6 @@ def prepara_domani(
         "todo_backup_creato": backup_creato,
         "dimensione_todo": len(contenuto_todo),
         "messaggio": (
-            f"Cartella preparata per {target_date}: "
-            f"todo.md {todo_msg}, raw.md {raw_msg}."
+            f"Cartella preparata per {target_date}: todo.md {todo_msg}, raw.md {raw_msg}."
         ),
     }

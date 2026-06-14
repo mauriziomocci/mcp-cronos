@@ -499,8 +499,7 @@ Restituisce: Conferma con path di todo.md e raw.md, e flag se raw e' stato creat
                 "data": {
                     "type": "string",
                     "description": (
-                        "Data target YYYY-MM-DD (opzionale, default: prossimo "
-                        "giorno lavorativo)"
+                        "Data target YYYY-MM-DD (opzionale, default: prossimo giorno lavorativo)"
                     ),
                 },
             },

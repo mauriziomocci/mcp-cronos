@@ -8,11 +8,9 @@ Covers:
 - fine_giornata template contains all required section placeholders
 """
 
-import os
 from pathlib import Path
 
 import pytest
-
 
 # ---------------------------------------------------------------------------
 # Built-in template loading

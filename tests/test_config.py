@@ -168,7 +168,9 @@ def test_section_names_from_english_language(config_toml_en: Path):
 # ---------------------------------------------------------------------------
 
 
-def test_config_from_explicit_env_var(tmp_path: Path, tmp_diario: Path, monkeypatch: pytest.MonkeyPatch):
+def test_config_from_explicit_env_var(
+    tmp_path: Path, tmp_diario: Path, monkeypatch: pytest.MonkeyPatch
+):
     """CRONOS_CONFIG_PATH takes precedence over the diario-root config file."""
     explicit_config = tmp_path / "custom_cronos.toml"
     explicit_config.write_text('[cronos]\nlang = "en"\n', encoding="utf-8")

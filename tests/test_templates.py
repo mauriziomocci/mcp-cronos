@@ -17,7 +17,6 @@ from mcp_cronos.templates import (
     crea_template_vuoto,
 )
 
-
 # ---------------------------------------------------------------------------
 # Autouse fixture: reset config singleton before and after each test
 # ---------------------------------------------------------------------------

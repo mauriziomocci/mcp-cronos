@@ -31,7 +31,6 @@ from mcp_cronos.utils.dates import (
 )
 from mcp_cronos.utils.markdown import parse_diary_file
 
-
 _SORGENTI_VALIDE = ("raw", "todo", "chiusura")
 
 
@@ -74,12 +73,7 @@ def cerca_nel_diario(
     sorgenti = list(tipo) if tipo else list(_SORGENTI_VALIDE)
     invalidi = [t for t in sorgenti if t not in _SORGENTI_VALIDE]
     if invalidi:
-        return {
-            "errore": (
-                f"Sorgenti non valide: {invalidi}. "
-                f"Ammesse: {list(_SORGENTI_VALIDE)}"
-            )
-        }
+        return {"errore": (f"Sorgenti non valide: {invalidi}. Ammesse: {list(_SORGENTI_VALIDE)}")}
 
     dates_to_search = get_date_range(start, end)
 
@@ -98,9 +92,7 @@ def cerca_nel_diario(
         # ha ancora il legacy single-file (li' tutto sta in raw).
         if not has_legacy_file(d):
             if "todo" in sorgenti:
-                files_cercati += _cerca_file_libero(
-                    get_todo_path(d), d, "todo", pattern, risultati
-                )
+                files_cercati += _cerca_file_libero(get_todo_path(d), d, "todo", pattern, risultati)
             if "chiusura" in sorgenti:
                 files_cercati += _cerca_file_libero(
                     get_fine_giornata_path(d), d, "chiusura", pattern, risultati
@@ -116,9 +108,7 @@ def cerca_nel_diario(
     }
 
 
-def _cerca_raw(
-    d: date_cls, pattern: re.Pattern, risultati: list[dict]
-) -> int:
+def _cerca_raw(d: date_cls, pattern: re.Pattern, risultati: list[dict]) -> int:
     """Cerca nelle entry strutturate del raw.md (o legacy). Ritorna 1 se file letto."""
     file_path = get_file_path(d)
     if not file_path.exists():
