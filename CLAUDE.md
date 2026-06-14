@@ -69,12 +69,17 @@ src/mcp_cronos/
 
 **Tool workflow**:
 - Daily entries: `cronos_aggiungi_entry` / `cronos_aggiungi_a_progetto` (append to existing)
-- Reading: `cronos_leggi_diario` / `cronos_cerca` / `cronos_lista_progetti` / `cronos_settimana`
+- Reading: `cronos_leggi_diario` / `cronos_cerca` / `cronos_lista_progetti` / `cronos_settimana` / `cronos_leggi_todo` / `cronos_lista_mese`
 - End of day: `cronos_fine_giornata` -> LLM generates content -> `cronos_scrivi_fine_giornata` (+ git commit/push)
 - Consolidation: `cronos_consolida_diario` -> LLM rewrites -> file write
 - Standup: `cronos_riassunto_standup` -> LLM generates message
 
-**Diary file structure**: `{CRONOS_DIARIO_PATH}/{year}/{month}/{year}-{month}-{day}.md`
+**Diary file structure**: current per-day folder layout
+`{CRONOS_DIARIO_PATH}/{year}/{month}/{year}-{month}-{day}/` containing `raw.md`
+(progressive daily log), `fine-giornata.md` (end-of-day closure), and `todo.md`
+(day's to-do list). Legacy days use a single file
+`{CRONOS_DIARIO_PATH}/{year}/{month}/{year}-{month}-{day}.md` and are kept as-is
+(no migration).
 
 ## Agent Rules
 
