@@ -108,6 +108,42 @@ def parse_diary_content(content: str) -> DiaryFile:
     return DiaryFile(titolo=titolo, entries=entries, bloccanti=bloccanti)
 
 
+def _split_entries_respecting_fences(content: str) -> list[str]:
+    """Split content into entry chunks at top-level '### ' headings only.
+
+    Lines inside fenced code blocks (delimited by ``` or ~~~) are treated as
+    opaque: a '### ' or '---' line inside a fence does not start or end an
+    entry. This prevents shell comments or diff markers in code samples from
+    being misread as diary structure.
+    """
+    parts: list[str] = []
+    current: list[str] = []
+    in_fence = False
+    fence_marker = ""
+
+    for line in content.split("\n"):
+        stripped = line.lstrip()
+        is_fence_line = stripped.startswith("```") or stripped.startswith("~~~")
+        if is_fence_line:
+            marker = stripped[:3]
+            if not in_fence:
+                in_fence = True
+                fence_marker = marker
+            elif marker == fence_marker:
+                in_fence = False
+                fence_marker = ""
+
+        if not in_fence and line.startswith("### ") and current:
+            parts.append("\n".join(current))
+            current = [line]
+        else:
+            current.append(line)
+
+    if current:
+        parts.append("\n".join(current))
+    return parts
+
+
 def parse_entries(content: str) -> list[DiaryEntry]:
     """
     Parsa le entry dalla sezione "Cosa ho fatto ieri".
@@ -140,8 +176,10 @@ def parse_entries(content: str) -> list[DiaryEntry]:
 
     entries = []
 
-    # Split per H3 (###)
-    parts = re.split(r"\n(?=### )", content)
+    # Split per H3 (###) ignorando le righe dentro blocchi di codice fenced.
+    # Un fence (``` o ~~~) puo' contenere righe '### ...' o '---' che NON sono
+    # confini di entry: una segmentazione regex naive le tratterebbe come tali.
+    parts = _split_entries_respecting_fences(content)
 
     for part in parts:
         part = part.strip()
