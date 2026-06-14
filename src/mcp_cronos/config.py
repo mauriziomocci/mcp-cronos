@@ -75,6 +75,8 @@ class CronosConfig:
     section_day_summary: str
     section_tech_summary: str
     section_standup_message: str
+    section_references: str
+    section_requested_by: str
     blockers_default: str
     title_format: str
     git_enabled: bool
@@ -195,6 +197,8 @@ def load_config() -> CronosConfig:
     section_day_summary = user_sections.get("day_summary", pack.sections["day_summary"])
     section_tech_summary = user_sections.get("tech_summary", pack.sections["tech_summary"])
     section_standup_message = user_sections.get("standup_message", pack.sections["standup_message"])
+    section_references = user_sections.get("references", pack.sections["references"])
+    section_requested_by = user_sections.get("requested_by", pack.sections["requested_by"])
 
     # Diary settings
     user_diary: dict[str, Any] = cronos_section.get("diary", {})
@@ -223,6 +227,8 @@ def load_config() -> CronosConfig:
         section_day_summary=section_day_summary,
         section_tech_summary=section_tech_summary,
         section_standup_message=section_standup_message,
+        section_references=section_references,
+        section_requested_by=section_requested_by,
         blockers_default=pack.blockers_default,
         title_format=title_format,
         git_enabled=git_enabled,

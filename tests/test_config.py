@@ -6,7 +6,6 @@ config file discovery (diario root, explicit env var, CRONOS_CONFIG_PATH),
 section overrides, git config, invalid TOML fallback, and blockers_default.
 """
 
-import os
 from pathlib import Path
 
 import pytest
@@ -20,7 +19,6 @@ from mcp_cronos.config import (
     get_diario_path,
     load_config,
 )
-
 
 # ---------------------------------------------------------------------------
 # Autouse fixture: reset singleton before and after each test
@@ -390,3 +388,24 @@ def test_find_config_file_explicit_env_var(
     monkeypatch.setenv("CRONOS_CONFIG_PATH", str(explicit))
     found = _find_config_file()
     assert found == explicit
+
+
+# ---------------------------------------------------------------------------
+# section_references and section_requested_by
+# ---------------------------------------------------------------------------
+
+
+def test_config_exposes_reference_labels_it(tmp_diario, config_toml_it):
+    from mcp_cronos.config import load_config
+
+    config = load_config()
+    assert config.section_references == "Riferimenti"
+    assert config.section_requested_by == "Richiesto da"
+
+
+def test_config_exposes_reference_labels_en(tmp_diario, config_toml_en):
+    from mcp_cronos.config import load_config
+
+    config = load_config()
+    assert config.section_references == "References"
+    assert config.section_requested_by == "Requested by"
