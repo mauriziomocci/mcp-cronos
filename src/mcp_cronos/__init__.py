@@ -13,4 +13,4 @@ Fornisce tool per:
 - Chiudere la giornata con riassunti e consolidamento
 """
 
-__version__ = "1.1.0"
+__version__ = "1.2.0"

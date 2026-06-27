@@ -1,6 +1,6 @@
 [project]
 name = "mcp-cronos"
-version = "1.1.0"
+version = "1.2.0"
 description = "MCP server for structured daily work diary management with i18n support"
 readme = "README.md"
 requires-python = ">=3.10"
