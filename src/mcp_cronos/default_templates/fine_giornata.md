@@ -73,7 +73,7 @@ qual e' stato l'esito. Niente dettagli implementativi qui. Deve servire al
 Esempio:
 "Giornata sul cleanup oauth2 dei microservizi ATPSS in produzione. Pulizia
 massiva di 3.5M righe sui 4 servizi non bloccati, infrastruttura cleartokens
-predisposta su tutti e 5 ma ancora suspended. AppManager resta bloccato sul
+predisposta su tutti e 5 ma ancora suspended. worker-service resta bloccato sul
 PVC saturo, decisione resize rimandata."
 
 === SEZIONE: Numeri salienti ===
@@ -85,7 +85,7 @@ Esempio:
 - 3.461.823 righe oauth2 cancellate su 4 microservizi
 - 5 immagini Docker buildate e deployate
 - 2 cron VACUUM riusciti, 3 falliti per env mancanti, tutti fixati
-- 12 GiB usati su 15 del PVC db-lowq AppManager (saturazione 80%)
+- 12 GiB usati su 15 del PVC db-lowq worker-service (saturazione 80%)
 
 === SEZIONE: Decisioni prese ===
 
@@ -95,7 +95,7 @@ ciascuna, con il motivo se non ovvio. Massimo 5-6 voci.
 Esempio:
 - REFRESH_TOKEN_EXPIRE_SECONDS a 60 giorni in produzione (override manifest, default codice 30gg)
 - Cron cleartokens lasciati suspended fino a dopo il weekend (validazione completata, ma niente run notturni durante festivi)
-- Strategy A per AppManager: resize PVC + cleanup incrementale, NON cleartokens diretto
+- Strategy A per worker-service: resize PVC + cleanup incrementale, NON cleartokens diretto
 
 === SEZIONE: Punti aperti ===
 
@@ -103,10 +103,10 @@ Cose lasciate a meta', task non ancora iniziati ma decisi, attese su altri.
 Una riga ciascuna. Indica cosa serve per chiuderli.
 
 Esempio:
-- Resize PVC db-lowq AppManager 15->25 GiB (attesa autorizzazione utente)
+- Resize PVC db-lowq worker-service 15->25 GiB (attesa autorizzazione utente)
 - Risposta Domenico su REFRESH_TOKEN_EXPIRE_SECONDS (proposto 30/60 giorni)
 - Unsuspend dei 4 cron cleartokens dopo il weekend
-- VACUUM FULL automatico del 04/05: AppManager fallira' di nuovo se PVC non resized
+- VACUUM FULL automatico del 04/05: worker-service fallira' di nuovo se PVC non resized
 
 === SEZIONE: Per riprendere il lavoro ===
 
@@ -122,7 +122,7 @@ Esempio:
 kubectl get jobs -n prod-teseoapp-atpss -l k8s-role=cron --sort-by=.metadata.creationTimestamp
 kubectl get pods -n prod-teseoapp-atpss --field-selector status.phase=Failed
 ```
-Se AppManager e' di nuovo ENOSPC: aprire la conversazione PVC resize.
+Se worker-service e' di nuovo ENOSPC: aprire la conversazione PVC resize.
 Altrimenti procedere con la sequenza unsuspend cron cleartokens."
 
 === SEZIONE: Discorso per lo standup ===
@@ -152,7 +152,7 @@ e abbiamo recuperato circa tre milioni e mezzo di righe. Nel pomeriggio
 ho preparato l'infrastruttura cleartokens su tutti e cinque, deployato le
 nuove versioni, e validato il comportamento con due test on-demand. I cron
 sono pero' ancora suspended, li attiveremo dopo il weekend. Resta aperto
-il discorso AppManager: il volume e' saturo, il vacuum di stanotte
+il discorso worker-service: il volume e' saturo, il vacuum di stanotte
 fallira' di nuovo se non facciamo il resize del PVC, sto aspettando
 l'autorizzazione."
 
@@ -167,8 +167,8 @@ attese, rischi. Le risposte vanno al punto, niente preamboli.
 
 Esempio:
 **D: Quanto spazio avete recuperato esattamente?**
-R: Sui 4 servizi puliti circa 12 GB sui database, in dettaglio Infomobile
-600MB, PayGW 1.2GB, SmarTicket 8GB, Accounts 2.2GB. AppManager non
+R: Sui 4 servizi puliti circa 12 GB sui database, in dettaglio api-gateway
+600MB, billing-service 1.2GB, web-frontend 8GB, auth-service 2.2GB. worker-service non
 calcolabile finche' non sblocchiamo il PVC.
 
 **D: Perche' i cron cleartokens non sono ancora attivi?**
@@ -178,10 +178,10 @@ durante il weekend, li attiviamo lunedi.
 
 **D: Il fix dei tre cron vacuum vale anche per gli altri?**
 R: Sono cinque cron identici per template, ho replicato le env block
-mancanti su tutti e tre quelli che fallivano. Gli altri due (Infomobile,
-SmarTicket) avevano gia' le env corrette dal primo deploy.
+mancanti su tutti e tre quelli che fallivano. Gli altri due (api-gateway,
+web-frontend) avevano gia' le env corrette dal primo deploy.
 
-**D: Cosa rischiamo se AppManager resta cosi' anche stanotte?**
+**D: Cosa rischiamo se worker-service resta cosi' anche stanotte?**
 R: Stesso ENOSPC del 30/04, il vacuum fallisce ma nessun impatto
 applicativo. Il rischio reale e' il limite: a 90% di saturazione il DB
 inizia a degradare, ora siamo all'80%. Settimana prossima resize obbligato.

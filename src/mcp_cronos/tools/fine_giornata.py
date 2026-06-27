@@ -138,7 +138,7 @@ def _consolida_entries(entries) -> list[dict]:
     """
     Raggruppa entry dello stesso progetto in un'unica entry consolidata.
 
-    Se ci sono 3 entry per "Goceano", le unisce in una sola con il contenuto
+    Se ci sono 3 entry per "Backend API", le unisce in una sola con il contenuto
     concatenato. Le descrizioni vengono combinate e il contenuto separato
     da sotto-sezioni.
     """
