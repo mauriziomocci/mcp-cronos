@@ -72,3 +72,9 @@ def test_statistiche_truncates(tmp_diario):
     assert r["totali"]["progetti"] == 3
     assert len(r["per_progetto"]) == 2
     assert r["troncato"] is True
+
+
+def test_cronos_statistiche_tool_registered():
+    from mcp_cronos.server import TOOLS
+
+    assert any(t.name == "cronos_statistiche" for t in TOOLS)
