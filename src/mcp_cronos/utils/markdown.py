@@ -14,6 +14,7 @@ from pathlib import Path
 from typing import Optional
 
 from mcp_cronos.config import load_config
+from mcp_cronos.utils.projects import canonical_projects
 
 # Italian default labels kept for backward compatibility: every diary written
 # before label localisation used these literals, regardless of language.
@@ -158,6 +159,10 @@ def _split_entries_respecting_fences(content: str) -> list[str]:
     if current:
         parts.append("\n".join(current))
     return parts
+
+
+# Public re-export for cross-module use (e.g. tools/audit_progetti).
+split_entries_respecting_fences = _split_entries_respecting_fences
 
 
 def parse_entries(content: str) -> list[DiaryEntry]:
@@ -396,8 +401,11 @@ def render_diary_file(diary: DiaryFile) -> str:
 def extract_projects(content: str) -> list[str]:
     """Extract unique project names from H3 entry headings.
 
-    Uses the same fence-aware segmentation as parse_entries so that '### '
-    lines inside fenced code blocks are not mistaken for project headings.
+    Delegates name resolution to ``canonical_projects``, which handles em-dash
+    separators, composite headings joined by " / ", and registry-based filtering
+    when a [cronos.projects] registry is configured. With an empty registry all
+    cleaned tokens pass through unchanged. Fence-aware segmentation is unchanged:
+    '### ' lines inside fenced code blocks are not mistaken for project headings.
 
     Args:
         content: Contenuto markdown del file
@@ -411,7 +419,7 @@ def extract_projects(content: str) -> list[str]:
         if not first_line.startswith("### "):
             continue
         header = first_line[4:].strip()
-        project = header.split(" - ", 1)[0].strip() if " - " in header else header.strip()
-        if project and project not in projects:
-            projects.append(project)
+        for project in canonical_projects(header):
+            if project not in projects:
+                projects.append(project)
     return projects

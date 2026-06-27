@@ -53,6 +53,15 @@ def test_lista_progetti(sample_diary_it):
     assert result["totale_progetti"] >= 1
     project_names = [p["nome"] for p in result["progetti"]]
     assert "MCP Cronos" in project_names
+    # New contract: prima_data/ultima_data instead of date list
+    proj = next(p for p in result["progetti"] if p["nome"] == "MCP Cronos")
+    assert "prima_data" in proj
+    assert "ultima_data" in proj
+    assert "date" not in proj
+    # New top-level keys
+    assert "per_sistema" in result
+    assert "troncato" in result
+    assert "max_progetti" in result
 
 
 def test_lista_progetti_empty(tmp_diario):
@@ -61,6 +70,58 @@ def test_lista_progetti_empty(tmp_diario):
         result = lista_progetti(ultimi_giorni=7)
 
     assert result["totale_progetti"] == 0
+
+
+def test_lista_progetti_two_level_with_registry(tmp_diario):
+    """lista_progetti attaches sistema, rolls up per_sistema, returns prima/ultima_data."""
+    (tmp_diario / "cronos.toml").write_text(
+        '[cronos]\ngit = false\n\n[cronos.projects.SmarTicket]\nsistema = "Teseo"\n',
+        encoding="utf-8",
+    )
+    month = tmp_diario / "2026" / "04"
+    month.mkdir(parents=True, exist_ok=True)
+    (month / "2026-04-09.md").write_text(
+        "# Per lo Stand-up - 10 Aprile 2026\n\n## Cosa ho fatto ieri\n\n"
+        "### SmarTicket - Fix\n\na\n\n---\n\n### Prossimi passi\n\nb\n\n---\n\n"
+        "## Bloccanti\n\nNessuno\n",
+        encoding="utf-8",
+    )
+    from mcp_cronos.config import _reset_config
+    from mcp_cronos.tools.reader import lista_progetti
+
+    _reset_config()
+    result = lista_progetti(data_inizio="2026-04-09", data_fine="2026-04-09")
+
+    nomi = [p["nome"] for p in result["progetti"]]
+    assert nomi == ["SmarTicket"]
+    assert result["progetti"][0]["sistema"] == "Teseo"
+    assert result["progetti"][0]["occorrenze"] == 1
+    assert result["progetti"][0]["prima_data"] == "2026-04-09"
+    assert result["progetti"][0]["ultima_data"] == "2026-04-09"
+    assert result["per_sistema"]["Teseo"] == 1
+    assert result["troncato"] is False
+    assert result["max_progetti"] == 100
+
+
+def test_lista_progetti_truncates_with_max_progetti(tmp_diario):
+    month = tmp_diario / "2026" / "04"
+    month.mkdir(parents=True, exist_ok=True)
+    (month / "2026-04-09.md").write_text(
+        "# T\n\n## Cosa ho fatto ieri\n\n"
+        "### Alpha - a\n\nx\n\n---\n\n### Beta - b\n\ny\n\n---\n\n"
+        "### Gamma - c\n\nz\n\n---\n\n## Bloccanti\n\nNessuno\n",
+        encoding="utf-8",
+    )
+    from mcp_cronos.config import _reset_config
+    from mcp_cronos.tools.reader import lista_progetti
+
+    _reset_config()
+    result = lista_progetti(data_inizio="2026-04-09", data_fine="2026-04-09", max_progetti=2)
+
+    assert result["totale_progetti"] == 3
+    assert len(result["progetti"]) == 2
+    assert result["troncato"] is True
+    assert result["max_progetti"] == 2
 
 
 def test_leggi_diario_range_lists_missing_days_compactly(sample_diary_it):

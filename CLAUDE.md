@@ -30,7 +30,7 @@ uv run ruff check src/mcp_cronos/
 ```
 src/mcp_cronos/
   __init__.py           # Package entry point, version
-  server.py             # MCP server, tool definitions and dispatch (14 tools)
+  server.py             # MCP server, tool definitions and dispatch (15 tools)
   config.py             # Configuration: TOML loading, CronosConfig singleton
   i18n.py               # Language packs (Italian, English), LanguagePack dataclass
   template_loader.py    # LLM template loading with user override support
@@ -52,9 +52,11 @@ src/mcp_cronos/
     leggi_todo.py         # cronos_leggi_todo (read todo.md for a date)
     lista_mese.py         # cronos_lista_mese (month dashboard of diary artifacts)
     prepara_domani.py     # cronos_prepara_domani (set up next working day folder)
+    audit_progetti.py     # cronos_audit_progetti (scan headings, cluster names, generate bozza_toml)
   utils/
     dates.py            # Date parsing, file path calculation, standup title (i18n-aware)
     markdown.py         # Diary file parsing, entry extraction, markdown rendering
+    projects.py         # Project registry: load [cronos.projects], canonical resolution, system_of()
 ```
 
 **Design pattern**: the server is synchronous (no async tool logic). Tools read/write markdown files directly via pathlib. Tools that require LLM reasoning (fine_giornata, consolida, standup) return raw data + style instructions — the LLM generates the output.
@@ -65,6 +67,7 @@ src/mcp_cronos/
 - `cronos.toml` (searched in diary root or `~/.config/cronos/`): language, section names, git settings, template overrides
 - `[cronos.calendar]`: `country` (ISO code, default `"IT"`) and `extra_holidays` (list of `YYYY-MM-DD` strings). Working-day calculation in `cronos_prepara_domani` and standup last-working-day logic is holiday-aware: skips national holidays for the configured country plus `extra_holidays`, in addition to weekends.
 - Priority: user config > language defaults > Italian defaults
+- An optional, domain-agnostic `[cronos.projects]` registry enables canonical project identity and a two-level system → component view; it is opt-in and empty by default.
 
 **i18n**: built-in Italian (default) and English. Section names, month/weekday names, temporal strings, and blockers default are all language-aware. LLM templates use `{section_*}` placeholders resolved at runtime.
 
@@ -84,56 +87,12 @@ src/mcp_cronos/
 
 ## Agent Rules
 
-### CRITICAL: Understand Before Implementing
+Le regole-agente generali si applicano dal CLAUDE.md globale (`~/.claude/CLAUDE.md`) e NON sono ricopiate qui: understand-before-implementing, verify-before-asserting, reuse-before-reinventing, no-bug-left-behind, evidence-based-verification, Core Behavior, Execution Discipline, Documentation Sync. La Mandatory Code Review segue la checklist a 8 punti del globale; per questo MCP non-Django i controlli specifici di Django (N+1/ORM, permessi sulle viste) si applicano solo dove pertinenti.
 
-Before writing any code, invest time in understanding the full context: how the existing system works, why it works that way, and what already exists. Read the affected files thoroughly. Never assume — verify in source code.
-
-### CRITICAL: Verify Before Asserting
-
-Never present assumptions or hypotheses as verified facts. If something has not been verified in source code, say so explicitly.
-
-### Core Behavior
-
-- **Read CLAUDE.md first** before starting any task
-- **Read and understand existing files** before modifying code
-- Avoid over-engineering: only implement what is requested
-- Prefer editing existing files over creating new ones
-- All code, comments, docstrings, and documentation in **English**
-- PEP 8 with 100 character line limit (as per ruff config), double quotes
-- Tests: **zero failing tests**
-
-### Execution Discipline
-
-1. **Plan before acting**: understand the codebase context, then act
-2. **Understand before implementing**: never start coding before understanding the existing system
-3. **Verify before asserting**: never state something as fact without checking source code
-4. **Handle errors, do not ignore them**: read error messages carefully, diagnose root cause, fix and re-test
-5. **Ask for clarification when needed**: if requirements are ambiguous, ask before proceeding
-
-### Code Comments and Docstrings
-
-- **Language**: English, professional and precise
-- **No emoji** in any context
-- **Docstring content**: explain the "why" beyond the "what". Document non-obvious technical decisions
-
-### Documentation Sync
-
-After any code change, update all affected documentation **in the same commit**:
-- **Docstrings**: update if method signature, behavior, or return value changed
-- **README.md**: update if the change affects tools, configuration, or usage
-
-### Mandatory Code Review
-
-After writing any code, **before proposing a commit**, perform a thorough review:
-
-1. **Pythonic style**: clean, idiomatic Python
-2. **DRY violations**: duplicated logic that can be extracted
-3. **Exception handling**: specific exceptions, no bare `except Exception` if the expected type is known
-4. **Codebase consistency**: naming, patterns, type annotations
-5. **Security**: no sensitive data in logs, no command injection, no unvalidated external input
-6. **Documentation**: docstrings updated, README updated if needed
-
-Fix issues before committing. Report what was found and corrected.
+Override e parametri locali di questo progetto:
+- **Lingua**: tutto il codice, commenti, docstring e documentazione in **inglese** (override del default italiano globale).
+- **Stile**: PEP 8, limite 100 caratteri (config ruff), virgolette doppie.
+- **No emoji** in nessun contesto.
 
 ## Mandatory Rules
 
@@ -160,7 +119,7 @@ CHANGE: Technical explanation.
 ```
 
 Types: `feat`, `fix`, `docs`, `refactor`, `test`, `chore`
-Scope: module name (e.g. `server`, `entries`, `reader`, `standup`, `fine_giornata`, `consolida`, `cerca`, `settimana`, `dates`, `markdown`, `templates`, `config`, `leggi_todo`, `lista_mese`, `prepara_domani`, `i18n`, `template_loader`, `workdays`, `gitinfo`)
+Scope: module name (e.g. `server`, `entries`, `reader`, `standup`, `fine_giornata`, `consolida`, `cerca`, `settimana`, `dates`, `markdown`, `templates`, `config`, `leggi_todo`, `lista_mese`, `prepara_domani`, `i18n`, `template_loader`, `workdays`, `gitinfo`, `projects`, `audit_progetti`)
 
 **FORBIDDEN**: References to Claude/AI, emoji, Co-Authored-By, attribution lines.
 
@@ -238,4 +197,4 @@ After writing the end-of-day file, commit and push the diary changes.
 
 - **Synchronous I/O**: all file operations are synchronous (pathlib read/write). Acceptable for single-user local diary.
 - **No file locking**: concurrent writes to the same diary file could conflict. Not an issue for single-user use.
-- **Tool dispatch is manual**: `call_tool()` uses if/elif chains instead of a registry. Acceptable for 14 tools.
+- **Tool dispatch is manual**: `call_tool()` uses if/elif chains instead of a registry. Acceptable for 15 tools.

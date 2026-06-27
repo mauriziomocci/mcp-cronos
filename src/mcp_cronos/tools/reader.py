@@ -16,6 +16,7 @@ from mcp_cronos.utils.dates import (
     parse_date,
 )
 from mcp_cronos.utils.markdown import extract_projects, parse_diary_file
+from mcp_cronos.utils.projects import system_of
 
 
 def leggi_diario(
@@ -129,19 +130,26 @@ def lista_progetti(
     data_inizio: Optional[str] = None,
     data_fine: Optional[str] = None,
     ultimi_giorni: int = 30,
+    max_progetti: int = 100,
 ) -> dict:
     """
     Elenca i progetti menzionati nel diario in un periodo.
 
-    Utile per avere una panoramica dei progetti su cui si e' lavorato.
+    Aggrega per nome canonico del progetto (tramite extract_projects, che
+    applica la registry se presente), allega il sistema padre (system_of),
+    raggruppa per sistema (per_sistema), restituisce prima e ultima data invece
+    della lista completa, e limita l'output a max_progetti voci.
 
     Args:
         data_inizio: Data inizio in formato YYYY-MM-DD (opzionale)
         data_fine: Data fine in formato YYYY-MM-DD (opzionale)
         ultimi_giorni: Se non specificate le date, usa gli ultimi N giorni (default 30)
+        max_progetti: Numero massimo di progetti restituiti, ordinati per frequenza
+            decrescente (default 100). Se i progetti totali superano questo limite,
+            troncato=True nel risultato.
 
     Returns:
-        Dict con lista progetti e statistiche
+        Dict con lista progetti canonici, rollup per sistema e flag di troncamento.
     """
     today = get_today()
 
@@ -160,33 +168,42 @@ def lista_progetti(
 
     dates_to_read = get_date_range(start, end)
 
-    # Raccogli progetti e conteggi
+    # Raccogli progetti canonici e conteggi
     progetti_count: dict[str, int] = {}
     progetti_date: dict[str, list[str]] = {}
 
     for d in dates_to_read:
         file_path = get_file_path(d)
-
         if file_path.exists():
             content = file_path.read_text(encoding="utf-8")
-            projects = extract_projects(content)
-
-            for proj in projects:
+            for proj in extract_projects(content):
                 progetti_count[proj] = progetti_count.get(proj, 0) + 1
-                if proj not in progetti_date:
-                    progetti_date[proj] = []
-                progetti_date[proj].append(str(d))
+                progetti_date.setdefault(proj, []).append(str(d))
 
-    # Ordina per frequenza
-    progetti_ordinati = sorted(progetti_count.items(), key=lambda x: x[1], reverse=True)
-
-    # Formatta risultato
-    progetti_dettaglio = []
-    for proj, count in progetti_ordinati:
-        progetti_dettaglio.append({"nome": proj, "occorrenze": count, "date": progetti_date[proj]})
+    ordinati = sorted(progetti_count.items(), key=lambda kv: kv[1], reverse=True)
+    troncato = len(ordinati) > max_progetti
+    progetti = []
+    per_sistema: dict[str, int] = {}
+    for nome, occ in ordinati[:max_progetti]:
+        date_list = sorted(progetti_date[nome])
+        sistema = system_of(nome)
+        progetti.append(
+            {
+                "nome": nome,
+                "sistema": sistema,
+                "occorrenze": occ,
+                "prima_data": date_list[0],
+                "ultima_data": date_list[-1],
+            }
+        )
+        if sistema:
+            per_sistema[sistema] = per_sistema.get(sistema, 0) + occ
 
     return {
         "periodo": {"da": str(start), "a": str(end), "giorni_analizzati": len(dates_to_read)},
         "totale_progetti": len(progetti_count),
-        "progetti": progetti_dettaglio,
+        "max_progetti": max_progetti,
+        "troncato": troncato,
+        "per_sistema": dict(sorted(per_sistema.items())),
+        "progetti": progetti,
     }

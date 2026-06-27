@@ -331,3 +331,26 @@ def test_parse_english_references_under_english_config(tmp_diario, config_toml_e
     assert entries[0].richiesto_da == "Marco"
     assert entries[0].riferimenti is not None
     assert entries[0].riferimenti.get("repository") == "smarticket-backend"
+
+
+def test_extract_projects_emdash_and_composite_no_registry(tmp_diario):
+    from mcp_cronos.utils.markdown import extract_projects
+
+    content = (
+        "### SmarTicket — Campo is_bookable (DVT-439)\n\nx\n\n---\n\n"
+        "### RapsodiaTrace / IoPollicino\n\ny\n"
+    )
+    assert extract_projects(content) == ["SmarTicket", "RapsodiaTrace", "IoPollicino"]
+
+
+def test_extract_projects_filters_with_registry(tmp_diario):
+    (tmp_diario / "cronos.toml").write_text(
+        '[cronos]\ngit = false\n\n[cronos.projects.SmarTicket]\nsistema = "Teseo"\n',
+        encoding="utf-8",
+    )
+    from mcp_cronos.config import _reset_config
+    from mcp_cronos.utils.markdown import extract_projects
+
+    _reset_config()
+    content = "### SmarTicket - x\n\na\n\n---\n\n### Prossimi passi\n\nb\n"
+    assert extract_projects(content) == ["SmarTicket"]

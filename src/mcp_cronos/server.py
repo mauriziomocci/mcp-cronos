@@ -27,6 +27,7 @@ from mcp.server.stdio import stdio_server
 from mcp.types import TextContent, Tool
 
 from mcp_cronos.tools.aggiungi_progetto import aggiungi_a_progetto
+from mcp_cronos.tools.audit_progetti import audit_progetti
 from mcp_cronos.tools.cerca import cerca_nel_diario
 from mcp_cronos.tools.consolida import consolida_diario
 
@@ -276,6 +277,10 @@ Restituisce: Lista progetti con occorrenze e date.""",
                 "ultimi_giorni": {
                     "type": "integer",
                     "description": "Giorni da analizzare (default 30)",
+                },
+                "max_progetti": {
+                    "type": "integer",
+                    "description": "Numero massimo di progetti restituiti (default 100)",
                 },
             },
         },
@@ -543,6 +548,41 @@ Restituisce: Conferma con path di todo.md e raw.md, e flag se raw e' stato creat
             "required": ["contenuto_todo"],
         },
     ),
+    Tool(
+        name="cronos_audit_progetti",
+        description="""Scansiona le intestazioni del diario su un periodo, raggruppa i nomi grezzi dei
+progetti per chiave normalizzata, e restituisce una bozza pronta da incollare in
+[cronos.projects] di cronos.toml. Read-only: non scrive mai il file di configurazione.
+
+Usa questo tool per:
+- Costruire il registry dei progetti da un diario esistente
+- Scoprire varianti di scrittura dello stesso progetto (es. "PayGW"/"PayGw"/"Pay GW")
+- Avere una base di partenza per configurare alias e gerarchia sistemi
+
+Parametri:
+- data_inizio (str, optional): Data inizio range YYYY-MM-DD
+- data_fine (str, optional): Data fine range YYYY-MM-DD
+- ultimi_giorni (int, optional): Se non specificate le date, usa gli ultimi N giorni (default 180)
+- max_voci (int, optional): Numero massimo di cluster restituiti (default 200)
+
+Restituisce: Lista cluster con chiave, canonico proposto, varianti, occorrenze;
+bozza TOML pronta da incollare; nota operativa.""",
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "data_inizio": {"type": "string", "description": "Data inizio range YYYY-MM-DD"},
+                "data_fine": {"type": "string", "description": "Data fine range YYYY-MM-DD"},
+                "ultimi_giorni": {
+                    "type": "integer",
+                    "description": "Giorni da analizzare se le date non sono specificate (default 180)",
+                },
+                "max_voci": {
+                    "type": "integer",
+                    "description": "Numero massimo di cluster restituiti (default 200)",
+                },
+            },
+        },
+    ),
 ]
 
 
@@ -617,6 +657,7 @@ async def call_tool(name: str, arguments: dict):
                 data_inizio=arguments.get("data_inizio"),
                 data_fine=arguments.get("data_fine"),
                 ultimi_giorni=arguments.get("ultimi_giorni", 30),
+                max_progetti=arguments.get("max_progetti", 100),
             )
 
         elif name == "cronos_cerca":
@@ -672,6 +713,14 @@ async def call_tool(name: str, arguments: dict):
             result = lista_mese(
                 mese=arguments.get("mese"),
                 anno=arguments.get("anno"),
+            )
+
+        elif name == "cronos_audit_progetti":
+            result = audit_progetti(
+                data_inizio=arguments.get("data_inizio"),
+                data_fine=arguments.get("data_fine"),
+                ultimi_giorni=arguments.get("ultimi_giorni", 180),
+                max_voci=arguments.get("max_voci", 200),
             )
 
         else:
