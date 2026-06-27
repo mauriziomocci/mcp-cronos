@@ -42,6 +42,7 @@ from mcp_cronos.tools.reader import leggi_diario, lista_progetti
 from mcp_cronos.tools.scrivi_fine_giornata import scrivi_fine_giornata
 from mcp_cronos.tools.settimana import riassunto_settimana
 from mcp_cronos.tools.standup import genera_riassunto_standup
+from mcp_cronos.tools.statistiche import statistiche
 
 # Crea server MCP
 server = Server("mcp-cronos")
@@ -625,6 +626,45 @@ Restituisce: Dossier con timeline, riferimenti aggregati, conteggio per componen
             "required": ["progetto"],
         },
     ),
+    Tool(
+        name="cronos_statistiche",
+        description="""Mostra la distribuzione del lavoro per progetto e per sistema in un periodo.
+
+Per ogni progetto restituisce il numero di voci e i giorni distinti in cui e' stato
+toccato. Calcola il roll-up per sistema con quota percentuale sul totale delle voci.
+Mostra il trend di attivita' per mese (conteggio voci).
+
+Usa questo tool quando l'utente chiede:
+- "Dove e' andato il mese?"
+- "Quanto ho lavorato su Platform vs Backend API?"
+- "Statistiche del periodo"
+- "Report del periodo"
+- "Distribuzione del lavoro"
+
+Parametri:
+- data_inizio (str, optional): Data inizio range YYYY-MM-DD
+- data_fine (str, optional): Data fine range YYYY-MM-DD
+- ultimi_giorni (int, optional): Giorni da analizzare se le date non sono specificate (default 90)
+- max_progetti (int, optional): Numero massimo di progetti restituiti (default 50)
+
+Restituisce: Totali, distribuzione per progetto, roll-up per sistema con quota percentuale,
+trend per mese, flag troncato.""",
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "data_inizio": {"type": "string", "description": "Data inizio range YYYY-MM-DD"},
+                "data_fine": {"type": "string", "description": "Data fine range YYYY-MM-DD"},
+                "ultimi_giorni": {
+                    "type": "integer",
+                    "description": "Giorni da analizzare se le date non sono specificate (default 90)",
+                },
+                "max_progetti": {
+                    "type": "integer",
+                    "description": "Numero massimo di progetti restituiti (default 50)",
+                },
+            },
+        },
+    ),
 ]
 
 
@@ -763,6 +803,14 @@ async def call_tool(name: str, arguments: dict):
                 data_fine=arguments.get("data_fine"),
                 ultimi_giorni=arguments.get("ultimi_giorni", 180),
                 max_voci=arguments.get("max_voci", 200),
+            )
+
+        elif name == "cronos_statistiche":
+            result = statistiche(
+                data_inizio=arguments.get("data_inizio"),
+                data_fine=arguments.get("data_fine"),
+                ultimi_giorni=arguments.get("ultimi_giorni", 90),
+                max_progetti=arguments.get("max_progetti", 50),
             )
 
         elif name == "cronos_progetto":
