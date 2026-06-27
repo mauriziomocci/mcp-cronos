@@ -43,7 +43,7 @@ def aggiungi_entry(
     Se il file esiste, aggiunge l'entry alla sezione "Cosa ho fatto ieri".
 
     Args:
-        progetto: Nome del progetto (es. "SmarTicket", "MCP Teseo")
+        progetto: Nome del progetto (es. "Backend API", "Mobile App")
         descrizione: Breve descrizione del lavoro (es. "Fix bug autenticazione")
         paragrafo_intro: Paragrafo introduttivo che riassume cosa e' stato fatto (opzionale, default "")
         contenuto: Contenuto aggiuntivo (sottosezioni, bullet points, codice)

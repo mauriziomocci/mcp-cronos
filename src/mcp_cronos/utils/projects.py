@@ -13,10 +13,10 @@ from typing import Optional
 def normalize_project(name: str) -> str:
     """Return a match key for a project name.
 
-    Lowercases, drops parenthetical suffixes like "(BDI)", and removes every
+    Lowercases, drops parenthetical suffixes like "(v2)", and removes every
     non-alphanumeric character so that case, spacing and punctuation variants
-    collapse: "PayGW"/"PayGw"/"Pay GW" -> "paygw",
-    "Beacon Service"/"BeaconService" -> "beaconservice". Genuinely different
+    collapse: "WebApp"/"webapp"/"Web App" -> "webapp",
+    "Auth Service"/"AuthService" -> "authservice". Genuinely different
     synonyms still need an explicit alias in the registry.
     """
     s = name.strip().lower()

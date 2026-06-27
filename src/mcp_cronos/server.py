@@ -59,7 +59,7 @@ Se il file non esiste, lo crea con la struttura corretta.
 Il titolo del file segue il formato "Per lo Stand-up {Giorno+1} {Mese} {Anno}".
 
 Parametri:
-- progetto (str, required): Nome del progetto (es. "SmarTicket", "MCP Teseo")
+- progetto (str, required): Nome del progetto (es. "Backend API", "Mobile App")
 - descrizione (str, required): Breve descrizione del lavoro (es. "Fix bug autenticazione")
 - paragrafo_intro (str, optional): Paragrafo introduttivo che riassume cosa e' stato fatto
 - contenuto (str, optional): Contenuto aggiuntivo (sottosezioni, bullet points, codice)
@@ -556,7 +556,7 @@ progetti per chiave normalizzata, e restituisce una bozza pronta da incollare in
 
 Usa questo tool per:
 - Costruire il registry dei progetti da un diario esistente
-- Scoprire varianti di scrittura dello stesso progetto (es. "PayGW"/"PayGw"/"Pay GW")
+- Scoprire varianti di scrittura dello stesso progetto (es. "WebApp"/"webapp"/"Web App")
 - Avere una base di partenza per configurare alias e gerarchia sistemi
 
 Parametri:

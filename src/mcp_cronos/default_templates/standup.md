@@ -23,8 +23,8 @@ REGOLE:
   punteggiatura italiana corretta. Rileggere il testo prima di produrlo.
 
 ESEMPIO DI TONO (messaggio reale inviato su Slack):
-"Ieri ho lavorato tutto il giorno su IoPollicino. La mattina ho chiuso la feature
-del codice referral facoltativo, mettendo il backend su stage presto così Matteo
+"Ieri ho lavorato tutto il giorno sulla Mobile App. La mattina ho chiuso la feature
+del codice referral facoltativo, mettendo il backend su stage presto così il team
 poteva procedere in parallelo, e nel pomeriggio ho completato la parte dashboard
 con le nuove metriche, i filtri per tipo utente e un warning che avvisa che siccome
 gli utenti con referral code non compilano il questionario sull'app mentre gli altri
@@ -32,7 +32,7 @@ sì, le statistiche potrebbero essere sbilanciate verso gli utenti non-referral.
 situazione si normalizzerà quando verranno importati i dati dei questionari degli
 utenti referral, ma nel frattempo il warning avvisa di leggere i numeri con cautela.
 Finito quello, ho iniziato la nuova lavorazione sulle metriche della landing page.
-Riccardo mi ha informato su quali statistiche servono — mezzo prevalente,
+Mi è stato comunicato su quali statistiche servono — mezzo prevalente,
 distribuzione modalità, motivo prevalente e tipo di mobilità attiva/motorizzata,
 entro stamattina dovrei terminare."
 

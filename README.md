@@ -156,7 +156,7 @@ Template files for generated output (end-of-day file, standup message, etc.) can
 Add a new entry to the daily diary. Creates the file and year/month directory structure if they do not exist.
 
 **Required parameters:**
-- `progetto` (string): Project name (e.g. `"SmarTicket"`, `"MCP Cronos"`)
+- `progetto` (string): Project name (e.g. `"Backend API"`, `"Mobile App"`)
 - `descrizione` (string): Short description of the work done (e.g. `"Fix auth bug"`)
 
 **Optional parameters:**
@@ -258,7 +258,7 @@ List all projects mentioned in the diary over a given period. When a project reg
 
 Scan diary headings over a period, cluster raw project names by normalised key, and return a ready-to-edit `[cronos.projects]` draft (`bozza_toml`). Read-only: it never writes `cronos.toml`.
 
-Use this tool to bootstrap the project registry from an existing diary, discover spelling variants of the same project (e.g. `"PayGW"` / `"PayGw"` / `"Pay GW"`), or get a starting point for configuring aliases and system hierarchy.
+Use this tool to bootstrap the project registry from an existing diary, discover spelling variants of the same project (e.g. `"WebApp"` / `"webapp"` / `"Web App"`), or get a starting point for configuring aliases and system hierarchy.
 
 **Optional parameters:**
 - `data_inizio` (string): Range start `YYYY-MM-DD`
@@ -592,7 +592,7 @@ I file template per l'output generato (file di fine giornata, messaggio standup,
 Aggiunge una nuova entry al diario giornaliero. Crea il file e la struttura di directory anno/mese se non esistono.
 
 **Parametri obbligatori:**
-- `progetto` (string): Nome del progetto (es. `"SmarTicket"`, `"MCP Cronos"`)
+- `progetto` (string): Nome del progetto (es. `"Backend API"`, `"Mobile App"`)
 - `descrizione` (string): Breve descrizione del lavoro svolto (es. `"Fix bug autenticazione"`)
 
 **Parametri opzionali:**
@@ -694,7 +694,7 @@ Elenca tutti i progetti menzionati nel diario in un dato periodo. Se e' presente
 
 Scansiona le intestazioni del diario su un periodo, raggruppa i nomi grezzi dei progetti per chiave normalizzata, e restituisce una bozza `[cronos.projects]` pronta da modificare (`bozza_toml`). Read-only: non scrive mai `cronos.toml`.
 
-Utile per costruire il registry dei progetti da un diario esistente, scoprire varianti di scrittura dello stesso progetto (es. `"PayGW"` / `"PayGw"` / `"Pay GW"`), o avere una base di partenza per configurare alias e gerarchia dei sistemi.
+Utile per costruire il registry dei progetti da un diario esistente, scoprire varianti di scrittura dello stesso progetto (es. `"WebApp"` / `"webapp"` / `"Web App"`), o avere una base di partenza per configurare alias e gerarchia dei sistemi.
 
 **Parametri opzionali:**
 - `data_inizio` (string): Inizio range `YYYY-MM-DD`
