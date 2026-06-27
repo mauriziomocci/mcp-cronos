@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.4.0] - 2026-06-27
+
 ### Added
 - `cronos_statistiche`: work-distribution statistics over a period — entries and
   distinct days per project, per-system roll-up with a share percentage
@@ -86,7 +88,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   single-file support; Italian/English i18n; automatic git commit/push at end of
   day.
 
-[Unreleased]: https://github.com/mauriziomocci/mcp-cronos/compare/v1.3.0...HEAD
+[Unreleased]: https://github.com/mauriziomocci/mcp-cronos/compare/v1.4.0...HEAD
+[1.4.0]: https://github.com/mauriziomocci/mcp-cronos/compare/v1.3.0...v1.4.0
 [1.3.0]: https://github.com/mauriziomocci/mcp-cronos/compare/v1.2.0...v1.3.0
 [1.2.0]: https://github.com/mauriziomocci/mcp-cronos/compare/v1.1.0...v1.2.0
 [1.1.0]: https://github.com/mauriziomocci/mcp-cronos/compare/v1.0.0...v1.1.0
