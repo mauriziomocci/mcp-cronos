@@ -30,6 +30,7 @@ from mcp_cronos.tools.aggiungi_progetto import aggiungi_a_progetto
 from mcp_cronos.tools.audit_progetti import audit_progetti
 from mcp_cronos.tools.cerca import cerca_nel_diario
 from mcp_cronos.tools.consolida import consolida_diario
+from mcp_cronos.tools.dossier import dossier_progetto
 
 # Import tool
 from mcp_cronos.tools.entries import aggiungi_entry, imposta_bloccanti
@@ -583,6 +584,47 @@ bozza TOML pronta da incollare; nota operativa.""",
             },
         },
     ),
+    Tool(
+        name="cronos_progetto",
+        description="""Ricostruisce la storia completa di un progetto o di un sistema (con roll-up automatico
+dei componenti) dal diario: timeline cronologica, riferimenti aggregati
+(repository/branch/Jira/MR), conteggio per componente, e bloccanti per giorno.
+
+Usa questo tool quando l'utente chiede:
+- "Raccontami il progetto X"
+- "La storia di X"
+- "Cosa ho fatto su X e cosa e' rimasto aperto?"
+- "Dossier del progetto Backend API"
+
+Parametri:
+- progetto (str, required): Nome del progetto o sistema (es. "Backend API")
+- data_inizio (str, optional): Data inizio range YYYY-MM-DD
+- data_fine (str, optional): Data fine range YYYY-MM-DD
+- ultimi_giorni (int, optional): Se le date non sono specificate, usa gli ultimi N giorni (default 180)
+- max_voci (int, optional): Numero massimo di voci nella timeline (default 50)
+
+Restituisce: Dossier con timeline, riferimenti aggregati, conteggio per componente, bloccanti.""",
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "progetto": {
+                    "type": "string",
+                    "description": "Nome del progetto o sistema (es. \"Backend API\")",
+                },
+                "data_inizio": {"type": "string", "description": "Data inizio range YYYY-MM-DD"},
+                "data_fine": {"type": "string", "description": "Data fine range YYYY-MM-DD"},
+                "ultimi_giorni": {
+                    "type": "integer",
+                    "description": "Giorni da analizzare se le date non sono specificate (default 180)",
+                },
+                "max_voci": {
+                    "type": "integer",
+                    "description": "Numero massimo di voci nella timeline (default 50)",
+                },
+            },
+            "required": ["progetto"],
+        },
+    ),
 ]
 
 
@@ -721,6 +763,15 @@ async def call_tool(name: str, arguments: dict):
                 data_fine=arguments.get("data_fine"),
                 ultimi_giorni=arguments.get("ultimi_giorni", 180),
                 max_voci=arguments.get("max_voci", 200),
+            )
+
+        elif name == "cronos_progetto":
+            result = dossier_progetto(
+                progetto=arguments["progetto"],
+                data_inizio=arguments.get("data_inizio"),
+                data_fine=arguments.get("data_fine"),
+                ultimi_giorni=arguments.get("ultimi_giorni", 180),
+                max_voci=arguments.get("max_voci", 50),
             )
 
         else:

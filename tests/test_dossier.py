@@ -86,3 +86,9 @@ def test_dossier_truncates(tmp_diario):
     assert r["num_voci"] == 5
     assert len(r["timeline"]) == 2
     assert r["troncato"] is True
+
+
+def test_cronos_progetto_tool_registered():
+    from mcp_cronos.server import TOOLS
+
+    assert any(t.name == "cronos_progetto" for t in TOOLS)
