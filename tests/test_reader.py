@@ -103,6 +103,27 @@ def test_lista_progetti_two_level_with_registry(tmp_diario):
     assert result["max_progetti"] == 100
 
 
+def test_lista_progetti_truncates_with_max_progetti(tmp_diario):
+    month = tmp_diario / "2026" / "04"
+    month.mkdir(parents=True, exist_ok=True)
+    (month / "2026-04-09.md").write_text(
+        "# T\n\n## Cosa ho fatto ieri\n\n"
+        "### Alpha - a\n\nx\n\n---\n\n### Beta - b\n\ny\n\n---\n\n"
+        "### Gamma - c\n\nz\n\n---\n\n## Bloccanti\n\nNessuno\n",
+        encoding="utf-8",
+    )
+    from mcp_cronos.config import _reset_config
+    from mcp_cronos.tools.reader import lista_progetti
+
+    _reset_config()
+    result = lista_progetti(data_inizio="2026-04-09", data_fine="2026-04-09", max_progetti=2)
+
+    assert result["totale_progetti"] == 3
+    assert len(result["progetti"]) == 2
+    assert result["troncato"] is True
+    assert result["max_progetti"] == 2
+
+
 def test_leggi_diario_range_lists_missing_days_compactly(sample_diary_it):
     """leggi_diario emits only found days in giorni and collects missing dates in date_mancanti."""
     result = leggi_diario(data_inizio="2026-04-08", data_fine="2026-04-09")

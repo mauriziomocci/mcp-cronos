@@ -32,9 +32,16 @@ def test_canonical_passthrough_when_no_registry(tmp_diario):
     assert canonical_projects("A / B") == ["A", "B"]
 
 
+def test_canonical_skips_punctuation_only_token(tmp_diario):
+    from mcp_cronos.utils.projects import canonical_projects
+
+    # No registry: a punctuation-only heading token must not become a project.
+    assert canonical_projects("---") == []
+
+
 def test_canonical_resolves_and_filters_with_registry(tmp_diario):
     (tmp_diario / "cronos.toml").write_text(
-        '[cronos]\ngit = false\n\n'
+        "[cronos]\ngit = false\n\n"
         '[cronos.projects.SmarTicket]\nsistema = "Teseo"\nalias = ["BDI"]\n',
         encoding="utf-8",
     )

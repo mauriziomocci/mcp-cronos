@@ -60,7 +60,7 @@ def canonical_projects(heading: str) -> list[str]:
             if canonical is not None and canonical not in result:
                 result.append(canonical)
         else:
-            if token not in result:
+            if normalize_project(token) and token not in result:
                 result.append(token)
     return result
 

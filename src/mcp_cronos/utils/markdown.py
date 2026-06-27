@@ -161,6 +161,10 @@ def _split_entries_respecting_fences(content: str) -> list[str]:
     return parts
 
 
+# Public re-export for cross-module use (e.g. tools/audit_progetti).
+split_entries_respecting_fences = _split_entries_respecting_fences
+
+
 def parse_entries(content: str) -> list[DiaryEntry]:
     """
     Parsa le entry dalla sezione "Cosa ho fatto ieri".

@@ -458,9 +458,9 @@ def test_config_projects_empty_by_default(tmp_diario):
 def test_config_projects_registry(tmp_diario):
     (tmp_diario / "cronos.toml").write_text(
         "[cronos]\ngit = false\n\n"
-        "[cronos.projects.SmarTicket]\nsistema = \"Teseo\"\n\n"
-        "[cronos.projects.PayGW]\nsistema = \"Teseo\"\nalias = [\"PayGw\"]\n\n"
-        "[cronos.projects.Teseo]\nalias = [\"Teseo Infra\"]\n",
+        '[cronos.projects.SmarTicket]\nsistema = "Teseo"\n\n'
+        '[cronos.projects.PayGW]\nsistema = "Teseo"\nalias = ["PayGw"]\n\n'
+        '[cronos.projects.Teseo]\nalias = ["Teseo Infra"]\n',
         encoding="utf-8",
     )
     from mcp_cronos.config import _reset_config, load_config

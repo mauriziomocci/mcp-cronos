@@ -9,7 +9,7 @@ from datetime import timedelta
 from typing import Optional
 
 from mcp_cronos.utils.dates import get_date_range, get_file_path, get_today, parse_date
-from mcp_cronos.utils.markdown import _split_entries_respecting_fences
+from mcp_cronos.utils.markdown import split_entries_respecting_fences
 from mcp_cronos.utils.projects import normalize_project, project_tokens
 
 
@@ -39,7 +39,7 @@ def audit_progetti(
         if not file_path.exists():
             continue
         content = file_path.read_text(encoding="utf-8")
-        for part in _split_entries_respecting_fences(content):
+        for part in split_entries_respecting_fences(content):
             first_line = part.split("\n", 1)[0]
             if not first_line.startswith("### "):
                 continue

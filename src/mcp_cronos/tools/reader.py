@@ -204,6 +204,6 @@ def lista_progetti(
         "totale_progetti": len(progetti_count),
         "max_progetti": max_progetti,
         "troncato": troncato,
-        "per_sistema": per_sistema,
+        "per_sistema": dict(sorted(per_sistema.items())),
         "progetti": progetti,
     }
