@@ -270,6 +270,40 @@ Use this tool to bootstrap the project registry from an existing diary, discover
 
 ---
 
+#### `cronos_progetto`
+
+Reconstruct the full story of a project or a system (with automatic component roll-up) from the diary: a chronological timeline, aggregated references (repository/branch/Jira/MR), per-component entry counts, and per-day blockers. Read-only, with a capped output to keep responses concise.
+
+Use this tool when you want to answer "tell me the story of project X", "what have I done on X and what is still open?", or "dossier of Backend API".
+
+**Required parameters:**
+- `progetto` (string): Project or system name (e.g. `"Backend API"`, `"Platform"`)
+
+**Optional parameters:**
+- `data_inizio` (string): Range start `YYYY-MM-DD`
+- `data_fine` (string): Range end `YYYY-MM-DD`
+- `ultimi_giorni` (integer): Days to analyse when no dates are specified (default: 180)
+- `max_voci` (integer): Maximum number of timeline entries returned; oldest entries are dropped first when the limit is exceeded (default: 50)
+
+**Returns:** A dossier dict with:
+- `e_sistema` (bool): whether the requested name resolves to a system rather than a single component
+- `membri` (list or null): components belonging to the system, when `e_sistema` is true
+- `timeline` (list): chronological diary entries, capped to `max_voci`
+- `riferimenti` (dict): deduplicated references aggregated across all entries (repositories, branches, Jira tickets, MRs)
+- `per_progetto` (dict): entry count per component, sorted by frequency descending
+- `bloccanti` (list): per-day blocker texts (only days with actual blockers)
+- `troncato` (bool): true when the timeline was truncated
+
+**Example:**
+
+```python
+Tool(name="cronos_progetto", arguments={"progetto": "Backend API", "ultimi_giorni": 90})
+```
+
+Returns the last 90 days of diary activity on `Backend API`, with aggregated branch and Jira references, per-component breakdown, and any recorded blockers.
+
+---
+
 #### `cronos_cerca`
 
 Full-text search across diary sources (raw entries, todo files, end-of-day files). Case-insensitive, with regex support.
@@ -703,6 +737,40 @@ Utile per costruire il registry dei progetti da un diario esistente, scoprire va
 - `max_voci` (integer): Numero massimo di cluster restituiti (predefinito: 200)
 
 **Restituisce:** Lista cluster (chiave, canonico proposto, varianti, occorrenze), una `bozza_toml` pronta da incollare e una nota operativa.
+
+---
+
+#### `cronos_progetto`
+
+Ricostruisce la storia completa di un progetto o di un sistema (con roll-up automatico dei componenti) dal diario: timeline cronologica, riferimenti aggregati (repository/branch/Jira/MR), conteggio per componente e bloccanti per giorno. Read-only, con output limitato per mantenere le risposte concise.
+
+Usare questo tool quando si vuole rispondere a "raccontami la storia del progetto X", "cosa ho fatto su X e cosa e' rimasto aperto?" oppure "dossier di Backend API".
+
+**Parametri obbligatori:**
+- `progetto` (string): Nome del progetto o sistema (es. `"Backend API"`, `"Platform"`)
+
+**Parametri opzionali:**
+- `data_inizio` (string): Inizio range `YYYY-MM-DD`
+- `data_fine` (string): Fine range `YYYY-MM-DD`
+- `ultimi_giorni` (integer): Giorni da analizzare se le date non sono specificate (predefinito: 180)
+- `max_voci` (integer): Numero massimo di voci nella timeline; le voci piu' vecchie vengono eliminate per prime quando il limite viene superato (predefinito: 50)
+
+**Restituisce:** Un dossier dict con:
+- `e_sistema` (bool): indica se il nome richiesto risolve a un sistema anziche' a un singolo componente
+- `membri` (list o null): componenti appartenenti al sistema, quando `e_sistema` e' true
+- `timeline` (list): entry del diario in ordine cronologico, troncate a `max_voci`
+- `riferimenti` (dict): riferimenti deduplicati aggregati su tutte le entry (repository, branch, ticket Jira, MR)
+- `per_progetto` (dict): conteggio entry per componente, ordinato per frequenza decrescente
+- `bloccanti` (list): testi dei bloccanti per giorno (solo i giorni con bloccanti reali)
+- `troncato` (bool): true quando la timeline e' stata troncata
+
+**Esempio:**
+
+```python
+Tool(name="cronos_progetto", arguments={"progetto": "Backend API", "ultimi_giorni": 90})
+```
+
+Restituisce gli ultimi 90 giorni di attivita' del diario su `Backend API`, con riferimenti aggregati a branch e ticket Jira, ripartizione per componente e i bloccanti registrati.
 
 ---
 
