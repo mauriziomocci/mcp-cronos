@@ -150,6 +150,45 @@ def test_dossier_max_voci_zero(tmp_diario):
     assert r["troncato"] is True
 
 
+def test_dossier_groups_references_into_buckets(tmp_diario):
+    y = tmp_diario / "2026" / "04" / "2026-04-09"
+    y.mkdir(parents=True, exist_ok=True)
+    (y / "raw.md").write_text(
+        "# T\n\n## Cosa ho fatto ieri\n\n"
+        "### Backend API - work\n\nbody\n\n"
+        "**Riferimenti:**\n"
+        "- Repository: api-repo\n"
+        "- Repo accounts: accounts-repo\n"
+        "- Branch: feature/x\n"
+        "- Jira: ABC-1\n"
+        "- Jira task: ABC-2\n"
+        "- GitLab MR: !10\n"
+        "- MR epic: !20\n"
+        "- Design e piano: https://doc.example/plan\n"
+        "- Documentazione tecnica (Google Doc): https://doc.example/tech\n\n"
+        "---\n\n## Bloccanti\n\nNessuno\n",
+        encoding="utf-8",
+    )
+    from mcp_cronos.config import _reset_config
+    from mcp_cronos.tools.dossier import dossier_progetto
+
+    _reset_config()
+    r = dossier_progetto("Backend API", data_inizio="2026-04-09", data_fine="2026-04-09")
+    refs = r["riferimenti"]
+
+    assert "api-repo" in refs["repository"]
+    assert "accounts-repo" in refs["repository"]  # "repo accounts" -> repository
+    assert "feature/x" in refs["branch"]
+    assert set(refs["jira"]) == {"ABC-1", "ABC-2"}  # jira + jira task
+    assert set(refs["gitlab_mr"]) == {"!10", "!20"}  # gitlab mr + mr epic
+    # free-form labels go to 'altri', not lost
+    assert "altri" in refs
+    assert "https://doc.example/plan" in refs["altri"]["design e piano"]
+    assert "https://doc.example/tech" in refs["altri"]["documentazione tecnica (google doc)"]
+    # no noisy top-level keys beyond the 4 buckets + 'altri'
+    assert set(refs.keys()) <= {"repository", "branch", "jira", "gitlab_mr", "altri"}
+
+
 def test_dossier_composite_partial_match(tmp_diario):
     (tmp_diario / "cronos.toml").write_text(
         "[cronos]\ngit = false\n\n[cronos.projects.SmarTicket]\n\n[cronos.projects.Infomobile]\n",

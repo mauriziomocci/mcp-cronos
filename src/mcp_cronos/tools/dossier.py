@@ -21,6 +21,25 @@ from mcp_cronos.utils.projects import canonical_projects, members_of, normalize_
 _DEFAULT_NO_BLOCKERS = {"nessuno", "none"}
 
 
+def _ref_bucket(label: str) -> Optional[str]:
+    """Map a free-form reference label to one of the structured buckets.
+
+    Returns "repository", "branch", "jira", or "gitlab_mr" for recognised
+    label families (handling variants like "repo accounts", "jira task",
+    "mr epic"), or None for everything else (which goes to the "altri" bucket).
+    """
+    low = label.strip().lower()
+    if low.startswith("repo"):
+        return "repository"
+    if low.startswith("branch"):
+        return "branch"
+    if low == "mr" or low.startswith("mr ") or "gitlab" in low:
+        return "gitlab_mr"
+    if "jira" in low or "ticket" in low or "subtask" in low or low.endswith("task"):
+        return "jira"
+    return None
+
+
 def dossier_progetto(
     progetto: str,
     data_inizio: Optional[str] = None,
@@ -44,6 +63,12 @@ def dossier_progetto(
         Dict with keys: progetto, e_sistema, membri, periodo, num_voci, num_giorni,
         prima_data, ultima_data, per_progetto, timeline, riferimenti, bloccanti,
         max_voci, troncato. On validation error, returns {"errore": "<message>"}.
+
+        The ``riferimenti`` value groups references into structured buckets:
+        ``repository``, ``branch``, ``jira``, ``gitlab_mr``.  Label variants
+        such as "repo accounts", "jira task", and "mr epic" are normalised into
+        the corresponding bucket.  All other free-form labels are preserved
+        under an ``altri`` sub-dict instead of flooding the top level.
     """
     today = get_today()
     if data_inizio and data_fine:
@@ -113,6 +138,18 @@ def dossier_progetto(
     timeline_out = timeline[len(timeline) - max_voci :] if troncato else timeline
     date_all = sorted(giorni)
 
+    strutturati: dict[str, set] = {}
+    altri: dict[str, set] = {}
+    for label, vals in refs_acc.items():
+        bucket = _ref_bucket(label)
+        if bucket:
+            strutturati.setdefault(bucket, set()).update(vals)
+        else:
+            altri.setdefault(label, set()).update(vals)
+    riferimenti: dict = {k: sorted(v) for k, v in sorted(strutturati.items())}
+    if altri:
+        riferimenti["altri"] = {k: sorted(v) for k, v in sorted(altri.items())}
+
     return {
         "progetto": progetto,
         "e_sistema": e_sistema,
@@ -124,7 +161,7 @@ def dossier_progetto(
         "ultima_data": date_all[-1] if date_all else None,
         "per_progetto": dict(sorted(per_progetto.items(), key=lambda kv: kv[1], reverse=True)),
         "timeline": timeline_out,
-        "riferimenti": {k: sorted(v) for k, v in sorted(refs_acc.items())},
+        "riferimenti": riferimenti,
         "bloccanti": bloccanti,
         "max_voci": max_voci,
         "troncato": troncato,
