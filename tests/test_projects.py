@@ -59,9 +59,9 @@ def test_canonical_resolves_and_filters_with_registry(tmp_diario):
 def test_members_of_system_rolls_up(tmp_diario):
     (tmp_diario / "cronos.toml").write_text(
         "[cronos]\ngit = false\n\n"
-        "[cronos.projects.Teseo]\nalias = [\"Teseo Infra\"]\n\n"
-        "[cronos.projects.SmarTicket]\nsistema = \"Teseo\"\n\n"
-        "[cronos.projects.Infomobile]\nsistema = \"Teseo\"\n\n"
+        '[cronos.projects.Teseo]\nalias = ["Teseo Infra"]\n\n'
+        '[cronos.projects.SmarTicket]\nsistema = "Teseo"\n\n'
+        '[cronos.projects.Infomobile]\nsistema = "Teseo"\n\n'
         "[cronos.projects.Goceano]\n",
         encoding="utf-8",
     )

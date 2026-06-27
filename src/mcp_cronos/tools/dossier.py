@@ -13,12 +13,12 @@ from mcp_cronos.config import load_config
 from mcp_cronos.utils.dates import get_date_range, get_file_path, get_today, parse_date
 from mcp_cronos.utils.markdown import (
     extract_references,
-    parse_diary_file,
+    parse_diary_content,
     split_entries_respecting_fences,
 )
 from mcp_cronos.utils.projects import canonical_projects, members_of, normalize_project
 
-_DEFAULT_NO_BLOCKERS = {"nessuno", "none", ""}
+_DEFAULT_NO_BLOCKERS = {"nessuno", "none"}
 
 
 def dossier_progetto(
@@ -37,6 +37,8 @@ def dossier_progetto(
         ultimi_giorni: Fallback window in days when no explicit date range given.
         max_voci: Maximum number of timeline entries returned. Excess entries are
             truncated from the front (oldest first) and flagged via ``troncato``.
+            Each timeline entry's ``progetto`` field is a LIST of matched canonical
+            project names (a composite heading can match more than one).
 
     Returns:
         Dict with keys: progetto, e_sistema, membri, periodo, num_voci, num_giorni,
@@ -100,13 +102,15 @@ def dossier_progetto(
                     refs_acc.setdefault(k, set()).add(v)
         if day_has_project:
             giorni.add(str(d))
-            diary = parse_diary_file(file_path)
+            diary = parse_diary_content(content)
             if diary and diary.bloccanti.strip().lower() not in _DEFAULT_NO_BLOCKERS:
                 bloccanti.append({"data": str(d), "testo": diary.bloccanti.strip()[:300]})
 
     timeline.sort(key=lambda v: v["data"])
+    max_voci = max(0, max_voci)
     troncato = len(timeline) > max_voci
-    timeline_out = timeline[-max_voci:] if troncato else timeline
+    # Slice from an absolute index to avoid the timeline[-0:] == full-list trap.
+    timeline_out = timeline[len(timeline) - max_voci :] if troncato else timeline
     date_all = sorted(giorni)
 
     return {

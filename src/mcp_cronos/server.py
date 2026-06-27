@@ -609,7 +609,7 @@ Restituisce: Dossier con timeline, riferimenti aggregati, conteggio per componen
             "properties": {
                 "progetto": {
                     "type": "string",
-                    "description": "Nome del progetto o sistema (es. \"Backend API\")",
+                    "description": 'Nome del progetto o sistema (es. "Backend API")',
                 },
                 "data_inizio": {"type": "string", "description": "Data inizio range YYYY-MM-DD"},
                 "data_fine": {"type": "string", "description": "Data fine range YYYY-MM-DD"},

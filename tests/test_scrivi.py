@@ -197,21 +197,34 @@ def _init_diary_git_repo(diario):
     )
     subprocess.run(["git", "init", "-b", "main", str(diario)], check=True, capture_output=True)
     subprocess.run(
-        ["git", "-C", str(diario), "-c", "user.email=t@t", "-c", "user.name=t",
-         "add", "-A"],
-        check=True, capture_output=True,
+        ["git", "-C", str(diario), "-c", "user.email=t@t", "-c", "user.name=t", "add", "-A"],
+        check=True,
+        capture_output=True,
     )
     subprocess.run(
-        ["git", "-C", str(diario), "-c", "user.email=t@t", "-c", "user.name=t",
-         "commit", "-m", "init"],
-        check=True, capture_output=True,
+        [
+            "git",
+            "-C",
+            str(diario),
+            "-c",
+            "user.email=t@t",
+            "-c",
+            "user.name=t",
+            "commit",
+            "-m",
+            "init",
+        ],
+        check=True,
+        capture_output=True,
     )
 
 
 def _porcelain(diario):
     out = subprocess.run(
         ["git", "-C", str(diario), "status", "--porcelain"],
-        check=True, capture_output=True, text=True,
+        check=True,
+        capture_output=True,
+        text=True,
     )
     return out.stdout.strip()
 
