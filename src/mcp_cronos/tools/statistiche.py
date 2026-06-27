@@ -4,6 +4,11 @@ Read-only. Counts entries (each H3 heading resolving to a canonical project)
 and distinct days per project over a period, rolls up to systems with a share
 percentage, and reports a per-month activity trend. Effort is a proxy (entries
 and days), not manual time-tracking.
+
+per_mese counts project-attributions per month (consistent with totali.voci).
+quota_pct is each system's share of total entries; shares may not sum to
+exactly 100 due to 1-decimal rounding, and exclude standalone projects (which
+have no system), so they sum to less than 100 when standalone work exists.
 """
 
 from datetime import timedelta
@@ -35,9 +40,9 @@ def statistiche(
         end = today
 
     voci: dict[str, int] = {}
-    giorni: dict[str, set] = {}
+    giorni: dict[str, set[str]] = {}
     per_mese: dict[str, int] = {}
-    giorni_attivi: set = set()
+    giorni_attivi: set[str] = set()
 
     for d in get_date_range(start, end):
         file_path = get_file_path(d)
@@ -53,15 +58,15 @@ def statistiche(
             if not projects:
                 continue
             giorni_attivi.add(str(d))
-            per_mese[mese] = per_mese.get(mese, 0) + 1
             for p in projects:
                 voci[p] = voci.get(p, 0) + 1
                 giorni.setdefault(p, set()).add(str(d))
+                per_mese[mese] = per_mese.get(mese, 0) + 1
 
     totale_voci = sum(voci.values())
 
     sys_voci: dict[str, int] = {}
-    sys_giorni: dict[str, set] = {}
+    sys_giorni: dict[str, set[str]] = {}
     for p, n in voci.items():
         s = system_of(p)
         if s:

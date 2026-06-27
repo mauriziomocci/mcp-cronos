@@ -3,11 +3,11 @@
 
 def _reg(diario):
     (diario / "cronos.toml").write_text(
-        '[cronos]\ngit = false\n\n'
-        '[cronos.projects.Teseo]\n\n'
+        "[cronos]\ngit = false\n\n"
+        "[cronos.projects.Teseo]\n\n"
         '[cronos.projects.SmarTicket]\nsistema = "Teseo"\n\n'
         '[cronos.projects.Infomobile]\nsistema = "Teseo"\n\n'
-        '[cronos.projects.Goceano]\n',
+        "[cronos.projects.Goceano]\n",
         encoding="utf-8",
     )
 
@@ -78,3 +78,36 @@ def test_cronos_statistiche_tool_registered():
     from mcp_cronos.server import TOOLS
 
     assert any(t.name == "cronos_statistiche" for t in TOOLS)
+
+
+def test_statistiche_passthrough_no_registry(tmp_diario):
+    # No cronos.toml -> pass-through: raw names counted, no system roll-up.
+    _day(tmp_diario, "2026-04-08", "Backend API - a", "Mobile App - b")
+    from mcp_cronos.config import _reset_config
+    from mcp_cronos.tools.statistiche import statistiche
+
+    _reset_config()
+    r = statistiche(data_inizio="2026-04-01", data_fine="2026-04-30")
+    assert r["totali"]["voci"] == 2
+    assert r["totali"]["sistemi"] == 0
+    assert r["per_sistema"] == []
+    nomi = {p["nome"] for p in r["per_progetto"]}
+    assert nomi == {"Backend API", "Mobile App"}
+    assert all(p["sistema"] is None for p in r["per_progetto"])
+
+
+def test_statistiche_composite_counts_consistently(tmp_diario):
+    _reg(tmp_diario)
+    # one composite heading touching two Teseo components
+    _day(tmp_diario, "2026-04-08", "SmarTicket / Infomobile - shared work")
+    from mcp_cronos.config import _reset_config
+    from mcp_cronos.tools.statistiche import statistiche
+
+    _reset_config()
+    r = statistiche(data_inizio="2026-04-01", data_fine="2026-04-30")
+    # composite counts for both projects
+    assert r["totali"]["voci"] == 2
+    pp = {p["nome"]: p["voci"] for p in r["per_progetto"]}
+    assert pp == {"SmarTicket": 1, "Infomobile": 1}
+    # per_mese is consistent with totali.voci
+    assert sum(r["per_mese"].values()) == r["totali"]["voci"] == 2
