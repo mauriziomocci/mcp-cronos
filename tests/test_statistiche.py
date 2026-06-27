@@ -111,3 +111,21 @@ def test_statistiche_composite_counts_consistently(tmp_diario):
     assert pp == {"SmarTicket": 1, "Infomobile": 1}
     # per_mese is consistent with totali.voci
     assert sum(r["per_mese"].values()) == r["totali"]["voci"] == 2
+
+
+def test_statistiche_system_includes_direct_tagged_work(tmp_diario):
+    _reg(tmp_diario)
+    # "Teseo" tagged directly (platform/infra work) + a component, same period
+    _day(tmp_diario, "2026-04-08", "Teseo - infra rollout", "SmarTicket - fix")
+    from mcp_cronos.config import _reset_config
+    from mcp_cronos.tools.statistiche import statistiche
+
+    _reset_config()
+    r = statistiche(data_inizio="2026-04-01", data_fine="2026-04-30")
+    ps = {s["sistema"]: s for s in r["per_sistema"]}
+    # Teseo system = direct "Teseo" work (1) + SmarTicket component (1) = 2
+    assert ps["Teseo"]["voci"] == 2
+    # "Teseo" still also appears as a top-level project entry (sistema=None) in per_progetto
+    pp = {p["nome"]: p for p in r["per_progetto"]}
+    assert pp["Teseo"]["sistema"] is None
+    assert pp["Teseo"]["voci"] == 1

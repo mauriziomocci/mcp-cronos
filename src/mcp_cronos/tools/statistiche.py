@@ -9,11 +9,18 @@ per_mese counts project-attributions per month (consistent with totali.voci).
 quota_pct is each system's share of total entries; shares may not sum to
 exactly 100 due to 1-decimal rounding, and exclude standalone projects (which
 have no system), so they sum to less than 100 when standalone work exists.
+
+per_sistema roll-up includes both component work (project with sistema = X)
+and directly-tagged system work (heading resolved to a system name itself),
+matching the dossier's members_of semantics. The system's own entries also
+appear in per_progetto with sistema=None (they are the system's direct work
+line, not a component of another system).
 """
 
 from datetime import timedelta
 from typing import Optional
 
+from mcp_cronos.config import load_config
 from mcp_cronos.utils.dates import get_date_range, get_file_path, get_today, parse_date
 from mcp_cronos.utils.markdown import split_entries_respecting_fences
 from mcp_cronos.utils.projects import canonical_projects, system_of
@@ -65,10 +72,16 @@ def statistiche(
 
     totale_voci = sum(voci.values())
 
+    systems = set(load_config().project_system.values())
     sys_voci: dict[str, int] = {}
     sys_giorni: dict[str, set[str]] = {}
     for p, n in voci.items():
+        # A component rolls into its parent system; a project whose own name is a
+        # system rolls into that system (its directly-tagged platform-level work),
+        # matching the dossier's members_of semantics.
         s = system_of(p)
+        if s is None and p in systems:
+            s = p
         if s:
             sys_voci[s] = sys_voci.get(s, 0) + n
             sys_giorni.setdefault(s, set()).update(giorni[p])
