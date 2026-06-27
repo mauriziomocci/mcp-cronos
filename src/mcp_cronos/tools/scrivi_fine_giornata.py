@@ -19,15 +19,18 @@ from mcp_cronos.utils.dates import (
 )
 
 
-def _git_commit_and_push(file_path, file_date) -> dict:
+def _git_commit_and_push(file_date) -> dict:
     """
-    Stage, commit, and optionally push the diary file to the remote repository.
+    Stage the whole diary, commit, and optionally push to the remote repository.
+
+    Stages everything with ``git add -A`` so the full day's work — raw entries,
+    todos, blockers, the end-of-day file, and the prepared next-day files — is
+    committed and pushed together in a single operation.
 
     Respects the config settings: git_enabled, auto_push, and commit_message.
     When git is disabled via config, returns immediately with {"git": "disabled"}.
 
     Args:
-        file_path: Absolute path of the file to commit.
         file_date: Date of the diary entry (used in commit message).
 
     Returns:
@@ -38,14 +41,13 @@ def _git_commit_and_push(file_path, file_date) -> dict:
         return {"git": "disabled"}
 
     diario_root = str(get_diario_path())
-    relative_path = str(file_path.relative_to(diario_root))
 
     git_result = {"git_add": None, "git_commit": None, "git_push": None}
 
     try:
-        # git add
+        # Stage the entire diary so raw entries, todos, and next-day files are included.
         subprocess.run(
-            ["git", "add", relative_path],
+            ["git", "add", "-A"],
             cwd=diario_root,
             capture_output=True,
             text=True,
@@ -125,20 +127,19 @@ def scrivi_fine_giornata(
 
     file_path.write_text(contenuto, encoding="utf-8")
 
-    # Commit and push to diary repository
-    git_result = _git_commit_and_push(file_path, file_date)
-
     risultato = {
         "successo": True,
         "file": str(file_path),
         "data": str(file_date),
         "dimensione": len(contenuto),
         "messaggio": f"File di fine giornata scritto per {file_date}",
-        "git": git_result,
     }
+    # Prepare next day BEFORE committing so its files join the same end-of-day commit.
     if contenuto_todo is not None:
         try:
             risultato["prepara_domani"] = prepara_domani(contenuto_todo)
         except OSError as exc:
             risultato["prepara_domani"] = {"successo": False, "errore": str(exc)}
+    # Commit and push the whole diary (entire day + prepared next day).
+    risultato["git"] = _git_commit_and_push(file_date)
     return risultato
