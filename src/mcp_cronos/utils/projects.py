@@ -70,3 +70,24 @@ def system_of(canonical: str) -> Optional[str]:
     from mcp_cronos.config import load_config  # noqa: PLC0415 — lazy to avoid import cycle
 
     return load_config().project_system.get(canonical)
+
+
+def members_of(target: str) -> set[str]:
+    """Return the canonical project names a dossier on `target` should include.
+
+    Resolves `target` to a canonical name via the registry (normalization +
+    aliases). If that canonical is a system (appears as a parent in the
+    registry), returns all its components plus the system name itself. Otherwise
+    returns just the resolved canonical. With an empty registry it returns the
+    target unchanged.
+    """
+    from mcp_cronos.config import load_config  # noqa: PLC0415 — lazy to avoid import cycle
+
+    config = load_config()
+    resolved = config.project_canonical.get(normalize_project(target), target)
+    systems = set(config.project_system.values())
+    if resolved in systems:
+        members = {c for c, sistema in config.project_system.items() if sistema == resolved}
+        members.add(resolved)
+        return members
+    return {resolved}
