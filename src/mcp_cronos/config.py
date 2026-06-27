@@ -85,6 +85,9 @@ class CronosConfig:
     git_enabled: bool
     auto_push: bool
     commit_message: str
+    project_canonical: dict[str, str]
+    project_system: dict[str, str]
+    projects_registered: bool
 
 
 # ---------------------------------------------------------------------------
@@ -239,6 +242,26 @@ def load_config() -> CronosConfig:
                 ) from exc
             calendar_extra_holidays.append(s)
 
+    # Lazy import avoids a circular dependency: utils/__init__.py re-exports
+    # from utils.dates which imports config, so a top-level import here would
+    # create a cycle. Importing the submodule directly at call time is safe.
+    from mcp_cronos.utils.projects import normalize_project  # noqa: PLC0415
+
+    # Project registry (optional, two-level system->component). Empty by default:
+    # an empty registry leaves project handling in pass-through mode.
+    raw_projects: dict[str, Any] = cronos_section.get("projects", {})
+    project_canonical: dict[str, str] = {}
+    project_system: dict[str, str] = {}
+    for canonical, meta in raw_projects.items():
+        project_canonical[normalize_project(canonical)] = canonical
+        if isinstance(meta, dict):
+            for alias in meta.get("alias", []) or []:
+                project_canonical[normalize_project(str(alias))] = canonical
+            sistema = meta.get("sistema")
+            if sistema:
+                project_system[canonical] = str(sistema)
+    projects_registered = len(raw_projects) > 0
+
     _config = CronosConfig(
         lang=lang,
         section_entries=section_entries,
@@ -255,5 +278,8 @@ def load_config() -> CronosConfig:
         git_enabled=git_enabled,
         auto_push=auto_push,
         commit_message=commit_message,
+        project_canonical=project_canonical,
+        project_system=project_system,
+        projects_registered=projects_registered,
     )
     return _config

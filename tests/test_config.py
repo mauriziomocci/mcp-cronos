@@ -439,3 +439,39 @@ def test_config_calendar_overrides(tmp_diario):
     config = load_config()
     assert config.calendar_country == "FR"
     assert config.calendar_extra_holidays == ["2026-12-07", "2026-08-14"]
+
+
+# ---------------------------------------------------------------------------
+# Project registry
+# ---------------------------------------------------------------------------
+
+
+def test_config_projects_empty_by_default(tmp_diario):
+    from mcp_cronos.config import load_config
+
+    config = load_config()
+    assert config.projects_registered is False
+    assert config.project_canonical == {}
+    assert config.project_system == {}
+
+
+def test_config_projects_registry(tmp_diario):
+    (tmp_diario / "cronos.toml").write_text(
+        "[cronos]\ngit = false\n\n"
+        "[cronos.projects.SmarTicket]\nsistema = \"Teseo\"\n\n"
+        "[cronos.projects.PayGW]\nsistema = \"Teseo\"\nalias = [\"PayGw\"]\n\n"
+        "[cronos.projects.Teseo]\nalias = [\"Teseo Infra\"]\n",
+        encoding="utf-8",
+    )
+    from mcp_cronos.config import _reset_config, load_config
+
+    _reset_config()
+    config = load_config()
+
+    assert config.projects_registered is True
+    assert config.project_canonical["smarticket"] == "SmarTicket"
+    assert config.project_canonical["paygw"] == "PayGW"
+    assert config.project_canonical["teseoinfra"] == "Teseo"
+    assert config.project_system["SmarTicket"] == "Teseo"
+    assert config.project_system["PayGW"] == "Teseo"
+    assert "Teseo" not in config.project_system
