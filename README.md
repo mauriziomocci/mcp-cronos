@@ -126,6 +126,25 @@ extra_holidays = ["2026-12-07"]
 
 The next/previous working-day calculation used by `cronos_prepara_domani` and by the standup summary skips the configured country's national holidays plus `extra_holidays`, in addition to weekends.
 
+#### Project registry (optional)
+
+The project registry is entirely optional. Cronos works out-of-the-box with no project configuration at all, and no project names are hardcoded in the package.
+
+When you want a two-level system → component view and canonical project identity across name variants, add a `[cronos.projects]` section to your `cronos.toml`:
+
+```toml
+[cronos.projects.api-gateway]
+sistema = "Platform"
+alias = ["APIGateway", "api gw"]
+
+[cronos.projects.billing]
+sistema = "Platform"
+```
+
+Each `[cronos.projects.<name>]` declares an optional parent `sistema` (the group or product area the component belongs to) and optional `alias` synonyms. Case, spacing, and punctuation variants are matched automatically, so `alias` is only needed for genuinely different names — not for `"API Gateway"` vs `"api gateway"`.
+
+The easiest way to build this list is to run `cronos_audit_progetti`, which scans your diary headings and returns a ready-made `bozza_toml` draft clustered by normalized name. Copy that draft into your `cronos.toml`, add `sistema` where you want hierarchy, and you are done.
+
 #### Custom Templates
 
 Template files for generated output (end-of-day file, standup message, etc.) can be placed in a `templates/` subdirectory inside your diary root. When present, these override the built-in defaults. The server loads templates from `$CRONOS_DIARIO_PATH/templates/` automatically.
@@ -223,14 +242,31 @@ Consolidate the diary by merging fragmented or duplicate entries. The tool reads
 
 #### `cronos_lista_progetti`
 
-List all projects mentioned in the diary over a given period.
+List all projects mentioned in the diary over a given period. When a project registry is configured, names are resolved to their canonical form and grouped by parent system.
 
 **Optional parameters:**
 - `data_inizio` (string): Start date `YYYY-MM-DD`
 - `data_fine` (string): End date `YYYY-MM-DD`
 - `ultimi_giorni` (integer): Number of days to analyse (default: 30)
+- `max_progetti` (integer): Maximum number of projects returned, ordered by frequency descending (default: 100)
 
-**Returns:** Project list with occurrence count and dates.
+**Returns:** `progetti` (each entry has `nome`, `sistema`, `occorrenze`, `prima_data`, `ultima_data`), `per_sistema` (occurrence rollup by parent system), `totale_progetti`, `max_progetti`, `troncato`.
+
+---
+
+#### `cronos_audit_progetti`
+
+Scan diary headings over a period, cluster raw project names by normalised key, and return a ready-to-edit `[cronos.projects]` draft (`bozza_toml`). Read-only: it never writes `cronos.toml`.
+
+Use this tool to bootstrap the project registry from an existing diary, discover spelling variants of the same project (e.g. `"PayGW"` / `"PayGw"` / `"Pay GW"`), or get a starting point for configuring aliases and system hierarchy.
+
+**Optional parameters:**
+- `data_inizio` (string): Range start `YYYY-MM-DD`
+- `data_fine` (string): Range end `YYYY-MM-DD`
+- `ultimi_giorni` (integer): Days to scan when no dates are specified (default: 180)
+- `max_voci` (integer): Maximum number of clusters returned (default: 200)
+
+**Returns:** List of clusters (key, proposed canonical, variants, occurrences), a `bozza_toml` ready to paste, and an operational note.
 
 ---
 
@@ -526,6 +562,25 @@ extra_holidays = ["2026-12-07"]
 
 Il calcolo del prossimo/precedente giorno lavorativo usato da `cronos_prepara_domani` e dal riassunto standup esclude i festivi nazionali del paese configurato piu' le `extra_holidays`, oltre ai weekend.
 
+#### Registry dei progetti (opzionale)
+
+Il registry dei progetti e' completamente opzionale. Cronos funziona senza alcuna configurazione dei progetti, e nessun nome di progetto e' hardcoded nel pacchetto.
+
+Quando si vuole una vista a due livelli sistema → componente e un'identita' canonica dei progetti tra varianti di scrittura, si aggiunge una sezione `[cronos.projects]` al proprio `cronos.toml`:
+
+```toml
+[cronos.projects.api-gateway]
+sistema = "Platform"
+alias = ["APIGateway", "api gw"]
+
+[cronos.projects.billing]
+sistema = "Platform"
+```
+
+Ogni `[cronos.projects.<name>]` dichiara un `sistema` padre opzionale (il gruppo o area prodotto a cui il componente appartiene) e sinonimi `alias` opzionali. Le varianti di maiuscolo, spaziatura e punteggiatura sono riconosciute automaticamente, quindi `alias` serve solo per nomi genuinamente diversi, non per `"API Gateway"` vs `"api gateway"`.
+
+Il modo piu' semplice per costruire questa lista e' eseguire `cronos_audit_progetti`, che scansiona le intestazioni del diario e restituisce una bozza `bozza_toml` pronta, raggruppata per chiave normalizzata. Basta copiare quella bozza nel proprio `cronos.toml`, aggiungere `sistema` dove si vuole la gerarchia, e il gioco e' fatto.
+
 #### Template Personalizzati
 
 I file template per l'output generato (file di fine giornata, messaggio standup, ecc.) possono essere posizionati in una sottodirectory `templates/` all'interno della radice del diario. Quando presenti, questi sovrascrivono i valori predefiniti integrati. Il server carica i template da `$CRONOS_DIARIO_PATH/templates/` automaticamente.
@@ -623,14 +678,31 @@ Consolida il diario unendo entry frammentate o duplicate. Il tool rilegge il fil
 
 #### `cronos_lista_progetti`
 
-Elenca tutti i progetti menzionati nel diario in un dato periodo.
+Elenca tutti i progetti menzionati nel diario in un dato periodo. Se e' presente un registry dei progetti, i nomi vengono risolti nella loro forma canonica e raggruppati per sistema padre.
 
 **Parametri opzionali:**
 - `data_inizio` (string): Data inizio `YYYY-MM-DD`
 - `data_fine` (string): Data fine `YYYY-MM-DD`
 - `ultimi_giorni` (integer): Numero di giorni da analizzare (predefinito: 30)
+- `max_progetti` (integer): Numero massimo di progetti restituiti, ordinati per frequenza decrescente (predefinito: 100)
 
-**Restituisce:** Lista progetti con numero di occorrenze e date.
+**Restituisce:** `progetti` (ogni voce ha `nome`, `sistema`, `occorrenze`, `prima_data`, `ultima_data`), `per_sistema` (rollup occorrenze per sistema padre), `totale_progetti`, `max_progetti`, `troncato`.
+
+---
+
+#### `cronos_audit_progetti`
+
+Scansiona le intestazioni del diario su un periodo, raggruppa i nomi grezzi dei progetti per chiave normalizzata, e restituisce una bozza `[cronos.projects]` pronta da modificare (`bozza_toml`). Read-only: non scrive mai `cronos.toml`.
+
+Utile per costruire il registry dei progetti da un diario esistente, scoprire varianti di scrittura dello stesso progetto (es. `"PayGW"` / `"PayGw"` / `"Pay GW"`), o avere una base di partenza per configurare alias e gerarchia dei sistemi.
+
+**Parametri opzionali:**
+- `data_inizio` (string): Inizio range `YYYY-MM-DD`
+- `data_fine` (string): Fine range `YYYY-MM-DD`
+- `ultimi_giorni` (integer): Giorni da scansionare se non si specificano le date (predefinito: 180)
+- `max_voci` (integer): Numero massimo di cluster restituiti (predefinito: 200)
+
+**Restituisce:** Lista cluster (chiave, canonico proposto, varianti, occorrenze), una `bozza_toml` pronta da incollare e una nota operativa.
 
 ---
 
