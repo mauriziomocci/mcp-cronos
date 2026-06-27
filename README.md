@@ -304,6 +304,35 @@ Returns the last 90 days of diary activity on `Backend API`, with aggregated bra
 
 ---
 
+#### `cronos_statistiche`
+
+Show work distribution by project and system over a period. Read-only, with a capped output to keep responses concise. Effort is a proxy (entry count and distinct days), not manual time-tracking.
+
+Use this tool when you want to answer "where did the month go?", "how did I split my time across projects?", or "work distribution for the last quarter".
+
+**Optional parameters:**
+- `data_inizio` (string): Start date `YYYY-MM-DD`
+- `data_fine` (string): End date `YYYY-MM-DD`
+- `ultimi_giorni` (integer): Days to analyse when no dates are specified (default: 90)
+- `max_progetti` (integer): Maximum number of projects returned, ordered by entry count descending (default: 50)
+
+**Returns:**
+- `totali`: `voci` (total entry count), `giorni_attivi` (days with at least one entry), `progetti` (distinct project count), `sistemi` (distinct system count)
+- `per_sistema`: per-system roll-up, each entry has `sistema`, `voci`, `giorni`, `quota_pct` (share of total entries, %)
+- `per_progetto`: per-project detail with `nome`, `sistema`, `voci`, `giorni`
+- `per_mese`: month-by-month activity trend (entry count per month, `YYYY-MM` keys)
+- `troncato`: true when the project list was capped at `max_progetti`
+
+**Example:**
+
+```python
+Tool(name="cronos_statistiche", arguments={"ultimi_giorni": 90})
+```
+
+Returns the last 90 days of diary activity: how many entries were logged per project and per system, each system's share of the total workload, and a month-by-month entry trend. With a project registry configured (e.g. `api-gateway` and `billing` both under system `"Platform"`), the `per_sistema` roll-up shows the combined weight of `Platform` as a single line with its `quota_pct`.
+
+---
+
 #### `cronos_cerca`
 
 Full-text search across diary sources (raw entries, todo files, end-of-day files). Case-insensitive, with regex support.
@@ -771,6 +800,35 @@ Tool(name="cronos_progetto", arguments={"progetto": "Backend API", "ultimi_giorn
 ```
 
 Restituisce gli ultimi 90 giorni di attivita' del diario su `Backend API`, con riferimenti aggregati a branch e ticket Jira, ripartizione per componente e i bloccanti registrati.
+
+---
+
+#### `cronos_statistiche`
+
+Mostra la distribuzione del lavoro per progetto e per sistema in un periodo. Read-only, con output limitato per mantenere le risposte concise. Lo sforzo e' un proxy (conteggio voci e giorni distinti), non un time-tracking manuale.
+
+Usare questo tool quando si vuole rispondere a "dove e' andato il mese?", "come ho distribuito il tempo tra i progetti?" o "distribuzione del lavoro nell'ultimo trimestre".
+
+**Parametri opzionali:**
+- `data_inizio` (string): Data inizio `YYYY-MM-DD`
+- `data_fine` (string): Data fine `YYYY-MM-DD`
+- `ultimi_giorni` (integer): Giorni da analizzare se le date non sono specificate (predefinito: 90)
+- `max_progetti` (integer): Numero massimo di progetti restituiti, ordinati per numero di voci decrescente (predefinito: 50)
+
+**Restituisce:**
+- `totali`: `voci` (totale entry), `giorni_attivi` (giorni con almeno una entry), `progetti` (progetti distinti), `sistemi` (sistemi distinti)
+- `per_sistema`: roll-up per sistema; ogni voce ha `sistema`, `voci`, `giorni`, `quota_pct` (quota percentuale sul totale delle voci)
+- `per_progetto`: dettaglio per progetto con `nome`, `sistema`, `voci`, `giorni`
+- `per_mese`: trend di attivita' per mese (conteggio voci per mese, chiavi `YYYY-MM`)
+- `troncato`: true quando la lista dei progetti e' stata troncata a `max_progetti`
+
+**Esempio:**
+
+```python
+Tool(name="cronos_statistiche", arguments={"ultimi_giorni": 90})
+```
+
+Restituisce gli ultimi 90 giorni di attivita' del diario: quante entry per progetto e per sistema, la quota percentuale di ciascun sistema sul totale e il trend mensile delle voci. Con un registry configurato (es. `api-gateway` e `billing` entrambi sotto il sistema `"Platform"`), il roll-up `per_sistema` mostra il peso complessivo di `Platform` come singola riga con la relativa `quota_pct`.
 
 ---
 
