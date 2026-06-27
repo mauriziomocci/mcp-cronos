@@ -54,3 +54,28 @@ def test_canonical_resolves_and_filters_with_registry(tmp_diario):
     assert canonical_projects("Totally Unknown Thing") == []
     assert system_of("SmarTicket") == "Teseo"
     assert system_of("SomethingElse") is None
+
+
+def test_members_of_system_rolls_up(tmp_diario):
+    (tmp_diario / "cronos.toml").write_text(
+        "[cronos]\ngit = false\n\n"
+        "[cronos.projects.Teseo]\nalias = [\"Teseo Infra\"]\n\n"
+        "[cronos.projects.SmarTicket]\nsistema = \"Teseo\"\n\n"
+        "[cronos.projects.Infomobile]\nsistema = \"Teseo\"\n\n"
+        "[cronos.projects.Goceano]\n",
+        encoding="utf-8",
+    )
+    from mcp_cronos.config import _reset_config
+    from mcp_cronos.utils.projects import members_of
+
+    _reset_config()
+    assert members_of("Teseo") == {"Teseo", "SmarTicket", "Infomobile"}
+    assert members_of("teseo infra") == {"Teseo", "SmarTicket", "Infomobile"}
+    assert members_of("SmarTicket") == {"SmarTicket"}
+    assert members_of("Goceano") == {"Goceano"}
+
+
+def test_members_of_passthrough_without_registry(tmp_diario):
+    from mcp_cronos.utils.projects import members_of
+
+    assert members_of("Anything") == {"Anything"}
