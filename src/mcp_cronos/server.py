@@ -277,6 +277,10 @@ Restituisce: Lista progetti con occorrenze e date.""",
                     "type": "integer",
                     "description": "Giorni da analizzare (default 30)",
                 },
+                "max_progetti": {
+                    "type": "integer",
+                    "description": "Numero massimo di progetti restituiti (default 100)",
+                },
             },
         },
     ),
@@ -617,6 +621,7 @@ async def call_tool(name: str, arguments: dict):
                 data_inizio=arguments.get("data_inizio"),
                 data_fine=arguments.get("data_fine"),
                 ultimi_giorni=arguments.get("ultimi_giorni", 30),
+                max_progetti=arguments.get("max_progetti", 100),
             )
 
         elif name == "cronos_cerca":
