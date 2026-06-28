@@ -65,9 +65,11 @@ def _riepilogo(
     """Genera una stringa di riepilogo leggibile per l'utente."""
     if totale == 0:
         return "Nessun problema rilevato nel periodo."
+    c = conteggi_gravita["critico"]
+    a = conteggi_gravita["avviso"]
     sev = (
-        f"{conteggi_gravita['critico']} critici, "
-        f"{conteggi_gravita['avviso']} avvisi, "
+        f"{c} {'critico' if c == 1 else 'critici'}, "
+        f"{a} {'avviso' if a == 1 else 'avvisi'}, "
         f"{conteggi_gravita['info']} info"
     )
     frammenti = []
@@ -79,7 +81,9 @@ def _riepilogo(
 
     # voci_non_mappate (avviso) — usa i contatori originali per la descrizione
     if nm_voci > 0:
-        frammenti.append(f"{nm_voci} voci fuori registro (in {nm_giorni} giorni)")
+        voce = "voce" if nm_voci == 1 else "voci"
+        giorno = "giorno" if nm_giorni == 1 else "giorni"
+        frammenti.append(f"{nm_voci} {voce} fuori registro (in {nm_giorni} {giorno})")
 
     # giorno_lavorativo_mancante (info)
     n = conteggi["giorno_lavorativo_mancante"]
