@@ -329,6 +329,7 @@ Use this tool when you want to answer "where did the month go?", "how did I spli
 
 **Returns:**
 - `totali`: `voci` (total entry count), `giorni_attivi` (days with at least one entry), `progetti` (distinct project count), `sistemi` (distinct system count)
+- `copertura`: how much of the written work these stats actually see — `voci_totali` (every H3 entry), `voci_mappate` (those resolving to a registered project), `voci_non_mappate`, `percentuale`, and `registro_attivo`. With an empty registry everything maps (100%). `voci_non_mappate` includes both untagged work and sub-section headings written as H3, so the percentage is a lower bound on real coverage, not an accusation.
 - `per_sistema`: per-system roll-up, each entry has `sistema`, `voci`, `giorni`, `quota_pct` (share of total entries, %)
 - `per_progetto`: per-project detail with `nome`, `sistema`, `voci`, `giorni`
 - `per_mese`: month-by-month activity trend (entry count per month, `YYYY-MM` keys)
@@ -916,6 +917,7 @@ Usare questo tool quando si vuole rispondere a "dove e' andato il mese?", "come 
 
 **Restituisce:**
 - `totali`: `voci` (totale entry), `giorni_attivi` (giorni con almeno una entry), `progetti` (progetti distinti), `sistemi` (sistemi distinti)
+- `copertura`: quanto del lavoro scritto queste statistiche vedono davvero — `voci_totali` (ogni voce H3), `voci_mappate` (quelle che risolvono a un progetto del registry), `voci_non_mappate`, `percentuale` e `registro_attivo`. Con registry vuoto tutto mappa (100%). `voci_non_mappate` include sia il lavoro non taggato sia i sotto-titoli scritti come H3, quindi la percentuale e' un limite inferiore della copertura reale, non un'accusa.
 - `per_sistema`: roll-up per sistema; ogni voce ha `sistema`, `voci`, `giorni`, `quota_pct` (quota percentuale sul totale delle voci)
 - `per_progetto`: dettaglio per progetto con `nome`, `sistema`, `voci`, `giorni`
 - `per_mese`: trend di attivita' per mese (conteggio voci per mese, chiavi `YYYY-MM`)

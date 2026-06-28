@@ -15,6 +15,12 @@ and directly-tagged system work (heading resolved to a system name itself),
 matching the dossier's members_of semantics. The system's own entries also
 appear in per_progetto with sistema=None (they are the system's direct work
 line, not a component of another system).
+
+copertura reports how much of the written work the statistics actually see:
+voci_totali counts every H3 entry, voci_mappate those resolving to a registered
+project. With an empty registry everything passes through (100%). voci_non_mappate
+includes both untagged work and sub-section headings written as H3, so the
+percentage is a lower bound on real coverage, not an accusation.
 """
 
 from datetime import timedelta
@@ -46,17 +52,22 @@ def statistiche(
         start = today - timedelta(days=ultimi_giorni - 1)
         end = today
 
+    config = load_config()
     voci: dict[str, int] = {}
     giorni: dict[str, set[str]] = {}
     per_mese: dict[str, int] = {}
     giorni_attivi: set[str] = set()
+    entries_count = 0
+    entries_mapped = 0
 
     for d, _content, entries in iter_diary_days(start, end):
         mese = str(d)[:7]
         for heading, _body in entries:
+            entries_count += 1
             projects = canonical_projects(heading)
             if not projects:
                 continue
+            entries_mapped += 1
             giorni_attivi.add(str(d))
             for p in projects:
                 voci[p] = voci.get(p, 0) + 1
@@ -65,7 +76,7 @@ def statistiche(
 
     totale_voci = sum(voci.values())
 
-    systems = set(load_config().project_system.values())
+    systems = set(config.project_system.values())
     sys_voci: dict[str, int] = {}
     sys_giorni: dict[str, set[str]] = {}
     for p, n in voci.items():
@@ -96,6 +107,14 @@ def statistiche(
         for p, n in ordinati[:max_progetti]
     ]
 
+    copertura = {
+        "registro_attivo": config.projects_registered,
+        "voci_totali": entries_count,
+        "voci_mappate": entries_mapped,
+        "voci_non_mappate": entries_count - entries_mapped,
+        "percentuale": round(entries_mapped / entries_count * 100, 1) if entries_count else 0.0,
+    }
+
     return {
         "periodo": {"da": str(start), "a": str(end), "giorni_analizzati": (end - start).days + 1},
         "totali": {
@@ -104,6 +123,7 @@ def statistiche(
             "progetti": len(voci),
             "sistemi": len(sys_voci),
         },
+        "copertura": copertura,
         "per_sistema": per_sistema,
         "per_progetto": per_progetto,
         "per_mese": dict(sorted(per_mese.items())),
