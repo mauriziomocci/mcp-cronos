@@ -10,13 +10,10 @@ from datetime import timedelta
 from typing import Optional
 
 from mcp_cronos.config import load_config
-from mcp_cronos.utils.dates import get_date_range, get_file_path, get_today, parse_date
-from mcp_cronos.utils.markdown import (
-    extract_references,
-    parse_diary_content,
-    split_entries_respecting_fences,
-)
+from mcp_cronos.utils.dates import get_today, parse_date
+from mcp_cronos.utils.markdown import extract_references, parse_diary_content
 from mcp_cronos.utils.projects import canonical_projects, members_of, normalize_project
+from mcp_cronos.utils.scan import iter_diary_days
 
 _DEFAULT_NO_BLOCKERS = {"nessuno", "none"}
 
@@ -94,23 +91,13 @@ def dossier_progetto(
     bloccanti: list[dict] = []
     giorni: set[str] = set()
 
-    for d in get_date_range(start, end):
-        file_path = get_file_path(d)
-        if not file_path.exists():
-            continue
-        content = file_path.read_text(encoding="utf-8")
+    for d, content, entries in iter_diary_days(start, end):
         day_has_project = False
-        for part in split_entries_respecting_fences(content):
-            head_body = part.split("\n", 1)
-            first = head_body[0]
-            if not first.startswith("### "):
-                continue
-            heading = first[4:].strip()
+        for heading, body in entries:
             matched = [p for p in canonical_projects(heading) if p in target_set]
             if not matched:
                 continue
             day_has_project = True
-            body = head_body[1] if len(head_body) > 1 else ""
             timeline.append(
                 {
                     "data": str(d),

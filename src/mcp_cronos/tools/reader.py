@@ -17,6 +17,7 @@ from mcp_cronos.utils.dates import (
 )
 from mcp_cronos.utils.markdown import extract_projects, parse_diary_file
 from mcp_cronos.utils.projects import system_of
+from mcp_cronos.utils.scan import iter_diary_days
 
 
 def leggi_diario(
@@ -172,13 +173,10 @@ def lista_progetti(
     progetti_count: dict[str, int] = {}
     progetti_date: dict[str, list[str]] = {}
 
-    for d in dates_to_read:
-        file_path = get_file_path(d)
-        if file_path.exists():
-            content = file_path.read_text(encoding="utf-8")
-            for proj in extract_projects(content):
-                progetti_count[proj] = progetti_count.get(proj, 0) + 1
-                progetti_date.setdefault(proj, []).append(str(d))
+    for _d, content, _entries in iter_diary_days(start, end):
+        for proj in extract_projects(content):
+            progetti_count[proj] = progetti_count.get(proj, 0) + 1
+            progetti_date.setdefault(proj, []).append(str(_d))
 
     ordinati = sorted(progetti_count.items(), key=lambda kv: kv[1], reverse=True)
     troncato = len(ordinati) > max_progetti

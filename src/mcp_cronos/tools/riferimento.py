@@ -8,9 +8,9 @@ plus the projects and systems the reference spans. Capped output.
 from datetime import timedelta
 from typing import Optional
 
-from mcp_cronos.utils.dates import get_date_range, get_file_path, get_today, parse_date
-from mcp_cronos.utils.markdown import split_entries_respecting_fences
+from mcp_cronos.utils.dates import get_today, parse_date
 from mcp_cronos.utils.projects import canonical_projects, system_of
+from mcp_cronos.utils.scan import iter_diary_days
 
 
 def traccia_riferimento(
@@ -42,23 +42,13 @@ def traccia_riferimento(
     progetti: set[str] = set()
     giorni: set[str] = set()
 
-    for d in get_date_range(start, end):
-        file_path = get_file_path(d)
-        if not file_path.exists():
-            continue
-        content = file_path.read_text(encoding="utf-8")
-        for part in split_entries_respecting_fences(content):
+    for d, _content, entries in iter_diary_days(start, end):
+        for heading, body in entries:
             # Match the reference anywhere in the entry (heading or body),
             # case-insensitive.
-            if needle not in part.lower():
+            if needle not in heading.lower() and needle not in body.lower():
                 continue
-            head_body = part.split("\n", 1)
-            first = head_body[0]
-            if not first.startswith("### "):
-                continue
-            heading = first[4:].strip()
             projs = canonical_projects(heading)
-            body = head_body[1] if len(head_body) > 1 else ""
             timeline.append(
                 {
                     "data": str(d),
