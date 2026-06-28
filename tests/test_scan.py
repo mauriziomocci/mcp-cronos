@@ -12,7 +12,8 @@ def _day(diario, ymd, body):
 
 def test_iter_diary_days_yields_entries_and_skips_missing(tmp_diario):
     _day(
-        tmp_diario, "2026-04-08",
+        tmp_diario,
+        "2026-04-08",
         "# T\n\n## Cosa ho fatto ieri\n\n"
         "### SmarTicket - a\n\nbody A\n\n---\n\n"
         "### Infomobile - b\n\nbody B\n\n---\n\n"
@@ -34,7 +35,8 @@ def test_iter_diary_days_yields_entries_and_skips_missing(tmp_diario):
 
 def test_iter_diary_days_fence_aware(tmp_diario):
     _day(
-        tmp_diario, "2026-04-08",
+        tmp_diario,
+        "2026-04-08",
         "# T\n\n## Cosa ho fatto ieri\n\n"
         "### Real - x\n\n```\n### not a heading\n```\n\n---\n\n"
         "## Bloccanti\n\nNessuno\n",
