@@ -3,10 +3,10 @@
 
 def _reg(diario):
     (diario / "cronos.toml").write_text(
-        '[cronos]\ngit = false\n\n'
+        "[cronos]\ngit = false\n\n"
         '[cronos.projects.SmarTicket]\nsistema = "Teseo"\n\n'
         '[cronos.projects.Infomobile]\nsistema = "Teseo"\n\n'
-        '[cronos.projects.Goceano]\n',
+        "[cronos.projects.Goceano]\n",
         encoding="utf-8",
     )
 
@@ -21,14 +21,16 @@ def _day(diario, ymd, body):
 def test_riferimento_traces_ticket_across_projects(tmp_diario):
     _reg(tmp_diario)
     _day(
-        tmp_diario, "2026-04-08",
+        tmp_diario,
+        "2026-04-08",
         "# T\n\n## Cosa ho fatto ieri\n\n"
         "### SmarTicket - export\n\nlavoro su DVT-552 export.\n\n---\n\n"
         "### Goceano - altro\n\nniente di rilevante.\n\n---\n\n"
         "## Bloccanti\n\nNessuno\n",
     )
     _day(
-        tmp_diario, "2026-04-10",
+        tmp_diario,
+        "2026-04-10",
         "# T\n\n## Cosa ho fatto ieri\n\n"
         "### Infomobile - fix collegato\n\nfix per dvt-552 lato infomobile.\n\n---\n\n"
         "## Bloccanti\n\nNessuno\n",
@@ -53,7 +55,8 @@ def test_riferimento_traces_ticket_across_projects(tmp_diario):
 def test_riferimento_empty_when_absent(tmp_diario):
     _reg(tmp_diario)
     _day(
-        tmp_diario, "2026-04-08",
+        tmp_diario,
+        "2026-04-08",
         "# T\n\n## Cosa ho fatto ieri\n\n### SmarTicket - x\n\nniente.\n\n---\n\n"
         "## Bloccanti\n\nNessuno\n",
     )

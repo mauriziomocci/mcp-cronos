@@ -71,7 +71,7 @@ def traccia_riferimento(
     timeline.sort(key=lambda v: v["data"])
     max_voci = max(0, max_voci)
     troncato = len(timeline) > max_voci
-    timeline_out = timeline[len(timeline) - max_voci:] if troncato else timeline
+    timeline_out = timeline[len(timeline) - max_voci :] if troncato else timeline
     sistemi = sorted({s for p in progetti if (s := system_of(p))})
     date_all = sorted(giorni)
 
