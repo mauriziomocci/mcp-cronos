@@ -39,6 +39,7 @@ from mcp_cronos.tools.leggi_todo import leggi_todo
 from mcp_cronos.tools.lista_mese import lista_mese
 from mcp_cronos.tools.prepara_domani import prepara_domani
 from mcp_cronos.tools.reader import leggi_diario, lista_progetti
+from mcp_cronos.tools.riferimento import traccia_riferimento
 from mcp_cronos.tools.scrivi_fine_giornata import scrivi_fine_giornata
 from mcp_cronos.tools.settimana import riassunto_settimana
 from mcp_cronos.tools.standup import genera_riassunto_standup
@@ -665,6 +666,47 @@ trend per mese, flag troncato.""",
             },
         },
     ),
+    Tool(
+        name="cronos_riferimento",
+        description="""Ricostruisce il filo di un riferimento (ticket, MR, repo) nel diario: ogni voce che
+lo menziona, in ordine cronologico, con il progetto canonico, piu' i progetti e i sistemi coinvolti.
+
+Usa questo tool quando l'utente chiede:
+- "Tutto cio' che tocca PROJ-123"
+- "Il filo della MR !456"
+- "Dove ho lavorato sul repo Backend API"
+- "Traccia PROJ-123"
+
+Parametri:
+- riferimento (str, required): Ticket / MR / repo / stringa da tracciare (es. "PROJ-123")
+- data_inizio (str, optional): Data inizio range YYYY-MM-DD
+- data_fine (str, optional): Data fine range YYYY-MM-DD
+- ultimi_giorni (int, optional): Giorni da analizzare se le date non sono specificate (default 180)
+- max_voci (int, optional): Numero massimo di voci nella timeline (default 50)
+
+Restituisce: Timeline cronologica con progetto, titolo, data per ogni match; lista progetti e
+sistemi coinvolti; flag troncato se i risultati superano max_voci.""",
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "riferimento": {
+                    "type": "string",
+                    "description": 'Ticket / MR / repo / stringa da tracciare (es. "PROJ-123")',
+                },
+                "data_inizio": {"type": "string", "description": "Data inizio range YYYY-MM-DD"},
+                "data_fine": {"type": "string", "description": "Data fine range YYYY-MM-DD"},
+                "ultimi_giorni": {
+                    "type": "integer",
+                    "description": "Giorni da analizzare se le date non sono specificate (default 180)",
+                },
+                "max_voci": {
+                    "type": "integer",
+                    "description": "Numero massimo di voci nella timeline (default 50)",
+                },
+            },
+            "required": ["riferimento"],
+        },
+    ),
 ]
 
 
@@ -816,6 +858,15 @@ async def call_tool(name: str, arguments: dict):
         elif name == "cronos_progetto":
             result = dossier_progetto(
                 progetto=arguments["progetto"],
+                data_inizio=arguments.get("data_inizio"),
+                data_fine=arguments.get("data_fine"),
+                ultimi_giorni=arguments.get("ultimi_giorni", 180),
+                max_voci=arguments.get("max_voci", 50),
+            )
+
+        elif name == "cronos_riferimento":
+            result = traccia_riferimento(
+                riferimento=arguments["riferimento"],
                 data_inizio=arguments.get("data_inizio"),
                 data_fine=arguments.get("data_fine"),
                 ultimi_giorni=arguments.get("ultimi_giorni", 180),

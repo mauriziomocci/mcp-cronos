@@ -84,3 +84,9 @@ def test_riferimento_truncates(tmp_diario):
     assert r["num_voci"] == 4
     assert len(r["timeline"]) == 2
     assert r["troncato"] is True
+
+
+def test_cronos_riferimento_tool_registered():
+    from mcp_cronos.server import TOOLS
+
+    assert any(t.name == "cronos_riferimento" for t in TOOLS)
