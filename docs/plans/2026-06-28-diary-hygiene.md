@@ -4,6 +4,8 @@
 
 **Goal:** nuovo tool sola-lettura `cronos_igiene` (funzione `igiene_diario`) che segnala problemi di igiene del diario con gravita' e suggerimento azionabile, piu' un riepilogo umano. Include il fix debito em-dash in `parse_entries`. Spec: `docs/specs/2026-06-28-diary-hygiene-design.md`.
 
+> **NOTA POST-IMPLEMENTAZIONE (2026-06-28):** il check #1 descritto sotto come `progetto_non_registrato` (un problema per voce) e' stato REDESIGNATO in forma AGGREGATA `voci_non_mappate` (un solo finding con voci/giorni/esempi, delega a `cronos_audit_progetti`) dopo che il field-test ha prodotto 523 problemi per-voce sul diario reale. La forma effettivamente spedita e' quella aggregata: vedi la spec aggiornata (fonte di verita') e i commit `c3ad9ca`/`f9867ba`. Il resto del piano (Task 1, 2, 4, 5 e gli altri 3 check) e' stato eseguito come scritto.
+
 **Tech Stack:** Python 3.10+, pytest, ruff. Inglese nel codice/commit; piano/spec in italiano; docstring in italiano (convenzione del modulo esistente — vedi markdown.py/dossier.py).
 
 ## Global Constraints
