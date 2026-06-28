@@ -149,6 +149,17 @@ The easiest way to build this list is to run `cronos_audit_progetti`, which scan
 
 Template files for generated output (end-of-day file, standup message, etc.) can be placed in a `templates/` subdirectory inside your diary root. When present, these override the built-in defaults. The server loads templates from `$CRONOS_DIARIO_PATH/templates/` automatically.
 
+### Getting started
+
+The simplest way to go from a fresh diary to a fully working project registry is a two-step loop: `cronos_audit_progetti` builds the list, `cronos_igiene` maintains it.
+
+1. **Write your diary entries as usual**, using `### ProjectName - Short description` headings.
+2. **Run `cronos_audit_progetti`**: it scans the diary headings, clusters spelling variants, and produces a ready-to-paste `[cronos.projects]` draft (`bozza_toml`).
+3. **Paste the draft into `cronos.toml`** (under `$CRONOS_DIARIO_PATH/cronos.toml`). Add a `sistema` field where you want hierarchy, tweak aliases if needed — the tool does the grouping work for you.
+4. **Run `cronos_igiene`**: it verifies that every heading now resolves to a registered project, flags working days with no diary, unclosed code fences, and days that were never closed. Act on its suggestions to keep the diary clean.
+
+Repeat step 4 whenever you add new projects or notice gaps. Re-run step 2 whenever the diary has grown and new project names have appeared that are not yet in the registry.
+
 ### Tools
 
 #### `cronos_aggiungi_entry`
@@ -364,6 +375,49 @@ Tool(name="cronos_riferimento", arguments={"riferimento": "PROJ-123", "ultimi_gi
 ```
 
 Returns the last 180 days of diary entries that mention `PROJ-123`, grouped by canonical project, with the list of projects and systems involved and a per-entry snippet showing the matching context.
+
+---
+
+#### `cronos_igiene`
+
+Read-only diary hygiene advisor. Scans the diary over a period and reports hygiene problems with a severity level and an actionable suggestion for each one, plus a human-readable one-line summary. Never writes any file.
+
+Four checks are performed:
+
+- **`voci_non_mappate`** (severity: `avviso`) — entry headings that do not map to any registered project, aggregated as a single finding with the total count, the number of affected days, and a few example headings. These entries are invisible to `cronos_progetto` and `cronos_statistiche`. Delegates the grouped breakdown to `cronos_audit_progetti`. Skipped when the registry is empty.
+- **`fence_non_chiusa`** (severity: `critico`) — an unclosed fenced code block at end of a day file; all later entries in that file merge into the open block and disappear from analysis tools.
+- **`giorno_lavorativo_mancante`** (severity: `info`) — a working day (holiday-aware) with no diary file at all.
+- **`chiusura_mancante`** (severity: `info`) — a day that has a `raw.md` but no `fine-giornata.md`. Legacy single-file days are excluded.
+
+**Optional parameters:**
+- `data_inizio` (string): Range start `YYYY-MM-DD`
+- `data_fine` (string): Range end `YYYY-MM-DD`
+- `ultimi_giorni` (integer): Days to analyse when no dates are specified (default: 180)
+- `max_problemi` (integer): Maximum number of problems in the output list (default: 100); per-type and per-severity counts always reflect the full total
+
+**Returns:**
+
+```json
+{
+  "periodo": {"da": "2026-04-01", "a": "2026-06-28", "giorni_analizzati": 88},
+  "registro_attivo": true,
+  "riepilogo": "5 problemi: 0 critici, 1 avvisi, 4 info — 12 voci fuori registro (in 4 giorni), 3 giorni feriali senza diario, 1 giornata non chiusa.",
+  "problemi": [
+    {"tipo": "voci_non_mappate", "gravita": "avviso", "data": null,
+     "voci": 12, "giorni": 4, "esempi": ["Code Review MR #42", "Rebase branch X"],
+     "dettaglio": "12 voci in 4 giorni non mappano ad alcun progetto del registro",
+     "suggerimento": "Lancia cronos_audit_progetti per vederle raggruppate e decidere cosa aggiungere a [cronos.projects]."},
+    {"tipo": "giorno_lavorativo_mancante", "gravita": "info", "data": "2026-05-04",
+     "dettaglio": "giorno lavorativo senza diario",
+     "suggerimento": "Se era una giornata di ferie/malattia ignora; altrimenti il giorno non e' tracciato."}
+  ],
+  "conteggi": {"voci_non_mappate": 1, "fence_non_chiusa": 0, "giorno_lavorativo_mancante": 3, "chiusura_mancante": 1},
+  "conteggi_gravita": {"critico": 0, "avviso": 1, "info": 4},
+  "totale_problemi": 5, "max_problemi": 100, "troncato": false, "note": []
+}
+```
+
+The `riepilogo` field is a human-readable Italian string (the tool's output strings are Italian by design). `registro_attivo` is false when no `[cronos.projects]` section is configured, in which case the `voci_non_mappate` check is skipped and a note is added. `troncato` is true when `totale_problemi` exceeds `max_problemi`; the counts are always the full totals regardless.
 
 ---
 
@@ -682,6 +736,17 @@ Il modo piu' semplice per costruire questa lista e' eseguire `cronos_audit_proge
 
 I file template per l'output generato (file di fine giornata, messaggio standup, ecc.) possono essere posizionati in una sottodirectory `templates/` all'interno della radice del diario. Quando presenti, questi sovrascrivono i valori predefiniti integrati. Il server carica i template da `$CRONOS_DIARIO_PATH/templates/` automaticamente.
 
+### Per iniziare
+
+Il modo piu' semplice per passare da un diario grezzo a un registry dei progetti funzionante e' un ciclo in due passi: `cronos_audit_progetti` costruisce la lista, `cronos_igiene` la mantiene.
+
+1. **Scrivi le entry del diario come al solito**, usando intestazioni del tipo `### NomeProgetto - Breve descrizione`.
+2. **Esegui `cronos_audit_progetti`**: scansiona le intestazioni del diario, raggruppa le varianti di scrittura e produce una bozza `[cronos.projects]` pronta da incollare (`bozza_toml`).
+3. **Incolla la bozza nel `cronos.toml`** (in `$CRONOS_DIARIO_PATH/cronos.toml`). Aggiungi un campo `sistema` dove vuoi la gerarchia, ritocca gli alias se necessario: il tool fa il lavoro di raggruppamento al posto tuo.
+4. **Esegui `cronos_igiene`**: verifica che ogni intestazione risolva a un progetto registrato, segnala i giorni lavorativi senza diario, le fence di codice non chiuse e le giornate mai chiuse. Segui i suggerimenti per tenere il diario pulito.
+
+Ripeti il passo 4 ogni volta che aggiungi nuovi progetti o noti lacune. Riesegui il passo 2 quando il diario e' cresciuto e sono comparsi nomi di progetto non ancora nel registry.
+
 ### Tool
 
 #### `cronos_aggiungi_entry`
@@ -897,6 +962,49 @@ Tool(name="cronos_riferimento", arguments={"riferimento": "PROJ-123", "ultimi_gi
 ```
 
 Restituisce gli ultimi 180 giorni di entry del diario che menzionano `PROJ-123`, raggruppate per progetto canonico, con la lista dei progetti e dei sistemi coinvolti e uno snippet per voce che mostra il contesto del match.
+
+---
+
+#### `cronos_igiene`
+
+Advisor di igiene del diario, sola lettura. Scansiona il diario su un periodo e segnala i problemi di igiene con un livello di gravita' e un suggerimento azionabile per ciascuno, piu' un riepilogo umano in una riga. Non scrive mai alcun file.
+
+Vengono eseguiti quattro controlli:
+
+- **`voci_non_mappate`** (gravita': `avviso`) — intestazioni di voce che non mappano ad alcun progetto del registry, aggregate in un unico risultato con il totale, il numero di giorni coinvolti e alcune intestazioni di esempio. Queste voci sono invisibili a `cronos_progetto` e `cronos_statistiche`. Delega la ripartizione raggruppata a `cronos_audit_progetti`. Saltato quando il registry e' vuoto.
+- **`fence_non_chiusa`** (gravita': `critico`) — blocco di codice fenced non chiuso a fine file giornata; tutte le voci successive si fondono nel blocco aperto e spariscono dagli strumenti di analisi.
+- **`giorno_lavorativo_mancante`** (gravita': `info`) — giorno lavorativo (festivo-aware) senza alcun file del diario.
+- **`chiusura_mancante`** (gravita': `info`) — giorno con `raw.md` ma senza `fine-giornata.md`. I giorni legacy single-file sono esclusi.
+
+**Parametri opzionali:**
+- `data_inizio` (string): Inizio range `YYYY-MM-DD`
+- `data_fine` (string): Fine range `YYYY-MM-DD`
+- `ultimi_giorni` (integer): Giorni da analizzare se le date non sono specificate (predefinito: 180)
+- `max_problemi` (integer): Numero massimo di problemi nell'elenco di output (predefinito: 100); i conteggi per tipo e per gravita' riflettono sempre il totale reale
+
+**Restituisce:**
+
+```json
+{
+  "periodo": {"da": "2026-04-01", "a": "2026-06-28", "giorni_analizzati": 88},
+  "registro_attivo": true,
+  "riepilogo": "5 problemi: 0 critici, 1 avvisi, 4 info — 12 voci fuori registro (in 4 giorni), 3 giorni feriali senza diario, 1 giornata non chiusa.",
+  "problemi": [
+    {"tipo": "voci_non_mappate", "gravita": "avviso", "data": null,
+     "voci": 12, "giorni": 4, "esempi": ["Code Review MR #42", "Rebase branch X"],
+     "dettaglio": "12 voci in 4 giorni non mappano ad alcun progetto del registro",
+     "suggerimento": "Lancia cronos_audit_progetti per vederle raggruppate e decidere cosa aggiungere a [cronos.projects]."},
+    {"tipo": "giorno_lavorativo_mancante", "gravita": "info", "data": "2026-05-04",
+     "dettaglio": "giorno lavorativo senza diario",
+     "suggerimento": "Se era una giornata di ferie/malattia ignora; altrimenti il giorno non e' tracciato."}
+  ],
+  "conteggi": {"voci_non_mappate": 1, "fence_non_chiusa": 0, "giorno_lavorativo_mancante": 3, "chiusura_mancante": 1},
+  "conteggi_gravita": {"critico": 0, "avviso": 1, "info": 4},
+  "totale_problemi": 5, "max_problemi": 100, "troncato": false, "note": []
+}
+```
+
+`registro_attivo` e' false quando non e' configurata nessuna sezione `[cronos.projects]`; in quel caso il controllo `voci_non_mappate` e' saltato e viene aggiunta una nota. `troncato` e' true quando `totale_problemi` supera `max_problemi`; i conteggi sono sempre i totali reali indipendentemente dal troncamento.
 
 ---
 

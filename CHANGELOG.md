@@ -7,6 +7,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- `cronos_igiene`: read-only diary hygiene advisor — scans the diary over a
+  configurable period and reports problems with a severity level (`critico`,
+  `avviso`, `info`) and an actionable suggestion for each one, plus a
+  human-readable one-line summary. Checks: entry headings that map to no
+  registered project (aggregated as one finding, delegating the grouped
+  breakdown to `cronos_audit_progetti`; skipped when the registry is empty),
+  unclosed fenced code blocks (corrupt a day silently), missing working days
+  (holiday-aware), and days with `raw.md` but no `fine-giornata.md`. Per-type
+  and per-severity counts always reflect the full total even when the output
+  list is capped via `max_problemi`.
+- README (both language sections) gains a getting-started workflow: a 4-step
+  cycle (`cronos_audit_progetti` builds the project list, `cronos_igiene`
+  maintains it) that makes building and keeping the project registry simple for
+  any user.
+
+### Fixed
+
+- `parse_entries` now splits entry headings on the em-dash separator (`" — "`)
+  in addition to the ASCII hyphen (`" - "`), aligning with `canonical_projects`
+  which already handled em-dash. Previously an em-dash heading kept the whole
+  string as the project name.
+
 ## [1.5.0] - 2026-06-27
 
 ### Added

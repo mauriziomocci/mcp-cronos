@@ -35,6 +35,7 @@ from mcp_cronos.tools.dossier import dossier_progetto
 # Import tool
 from mcp_cronos.tools.entries import aggiungi_entry, imposta_bloccanti
 from mcp_cronos.tools.fine_giornata import fine_giornata
+from mcp_cronos.tools.igiene import igiene_diario
 from mcp_cronos.tools.leggi_todo import leggi_todo
 from mcp_cronos.tools.lista_mese import lista_mese
 from mcp_cronos.tools.prepara_domani import prepara_domani
@@ -707,6 +708,33 @@ sistemi coinvolti; flag troncato se i risultati superano max_voci.""",
             "required": ["riferimento"],
         },
     ),
+    Tool(
+        name="cronos_igiene",
+        description="""Controllo di igiene del diario (sola lettura): segnala voci con intestazione fuori dal registro progetti, blocchi di codice non chiusi, giorni feriali senza diario e giornate aperte ma non chiuse, ognuno con gravita' e suggerimento. Include un riepilogo leggibile.""",
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "data_inizio": {
+                    "type": "string",
+                    "description": "Data inizio periodo (YYYY-MM-DD), opzionale.",
+                },
+                "data_fine": {
+                    "type": "string",
+                    "description": "Data fine periodo (YYYY-MM-DD), opzionale.",
+                },
+                "ultimi_giorni": {
+                    "type": "integer",
+                    "description": "Se non si passano le date, analizza gli ultimi N giorni.",
+                    "default": 180,
+                },
+                "max_problemi": {
+                    "type": "integer",
+                    "description": "Numero massimo di problemi elencati (i conteggi restano totali).",
+                    "default": 100,
+                },
+            },
+        },
+    ),
 ]
 
 
@@ -871,6 +899,14 @@ async def call_tool(name: str, arguments: dict):
                 data_fine=arguments.get("data_fine"),
                 ultimi_giorni=arguments.get("ultimi_giorni", 180),
                 max_voci=arguments.get("max_voci", 50),
+            )
+
+        elif name == "cronos_igiene":
+            result = igiene_diario(
+                data_inizio=arguments.get("data_inizio"),
+                data_fine=arguments.get("data_fine"),
+                ultimi_giorni=arguments.get("ultimi_giorni", 180),
+                max_problemi=arguments.get("max_problemi", 100),
             )
 
         else:

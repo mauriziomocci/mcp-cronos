@@ -354,3 +354,26 @@ def test_extract_projects_filters_with_registry(tmp_diario):
     _reset_config()
     content = "### SmarTicket - x\n\na\n\n---\n\n### Prossimi passi\n\nb\n"
     assert extract_projects(content) == ["SmarTicket"]
+
+
+def test_has_unclosed_fence():
+    from mcp_cronos.utils.markdown import has_unclosed_fence
+
+    assert has_unclosed_fence("```\ncode\n```") is False
+    assert has_unclosed_fence("```\ncode") is True
+    assert has_unclosed_fence("no fence here") is False
+    assert has_unclosed_fence("") is False
+    # 4-backtick outer wrapping an inner 3-backtick block, properly closed
+    assert has_unclosed_fence("````\n```\ninner\n```\n````") is False
+    # 4-backtick outer left open (inner 3-backtick must NOT close it)
+    assert has_unclosed_fence("````\n```\ninner\n```") is True
+    # tilde fence
+    assert has_unclosed_fence("~~~\ncode") is True
+
+
+def test_parse_entries_splits_emdash_heading():
+    from mcp_cronos.utils.markdown import parse_entries
+
+    entries = parse_entries("### Alpha — descrizione lunga\n\ncorpo\n")
+    assert entries[0].progetto == "Alpha"
+    assert entries[0].descrizione == "descrizione lunga"

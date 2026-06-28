@@ -114,26 +114,19 @@ def parse_diary_content(content: str) -> DiaryFile:
     return DiaryFile(titolo=titolo, entries=entries, bloccanti=bloccanti)
 
 
-def _split_entries_respecting_fences(content: str) -> list[str]:
-    """Split content into entry chunks at top-level '### ' headings only.
+def _iter_with_fence_state(content: str):
+    """Itera (riga, in_fence) per ogni riga del contenuto.
 
-    Lines inside fenced code blocks are treated as opaque: a '### ' or '---'
-    line inside a fence does not start or end an entry. This prevents shell
-    comments or diff markers in code samples from being misread as diary
-    structure.
-
-    Fences follow CommonMark rules closely enough for diary content: a fence
-    opens on a line of at least three '`' or '~' characters; it closes only on
-    a later line of the same character, at least as long, with no trailing info
-    string. Tracking the exact fence length lets a longer outer fence (e.g. four
-    backticks wrapping markdown that contains a three-backtick block) survive an
-    inner fence instead of being closed by it.
+    in_fence e' True quando la riga cade dentro un blocco di codice fenced,
+    secondo la regola (CommonMark-ish) condivisa con lo splitter: un fence si
+    apre su una riga di >=3 caratteri '`' o '~'; si chiude solo su una riga
+    successiva con lo stesso carattere, lunga almeno quanto l'apertura e senza
+    info-string. Tracciare la lunghezza del fence permette a un fence esterno
+    piu' lungo di sopravvivere a uno interno piu' corto. in_fence e' valutato
+    DOPO il toggle sulla riga corrente, come faceva lo splitter originale.
     """
-    parts: list[str] = []
-    current: list[str] = []
-    fence_char = ""  # "`" or "~" while inside a fence, "" otherwise
+    fence_char = ""
     fence_len = 0
-
     for line in content.split("\n"):
         stripped = line.lstrip()
         if stripped and stripped[0] in ("`", "~"):
@@ -141,28 +134,63 @@ def _split_entries_respecting_fences(content: str) -> list[str]:
             run = len(stripped) - len(stripped.lstrip(ch))
             if run >= 3:
                 if not fence_char:
-                    # Opening fence; an info string after the run is allowed.
                     fence_char = ch
                     fence_len = run
                 elif ch == fence_char and run >= fence_len and stripped[run:].strip() == "":
-                    # Closing fence: same char, at least as long, no info string.
                     fence_char = ""
                     fence_len = 0
+        yield line, bool(fence_char)
 
-        in_fence = bool(fence_char)
+
+def _split_entries_respecting_fences(content: str) -> list[str]:
+    """Divide il contenuto in chunk di entry solo sui titoli '### ' di primo livello.
+
+    Le righe dentro blocchi di codice fenced sono opache: una riga '### ' o '---'
+    dentro un fence non apre ne' chiude una entry. La gestione dei fence vive in
+    _iter_with_fence_state (condivisa con has_unclosed_fence).
+    """
+    parts: list[str] = []
+    current: list[str] = []
+    for line, in_fence in _iter_with_fence_state(content):
         if not in_fence and line.startswith("### ") and current:
             parts.append("\n".join(current))
             current = [line]
         else:
             current.append(line)
-
     if current:
         parts.append("\n".join(current))
     return parts
 
 
+def has_unclosed_fence(content: str) -> bool:
+    """True se un blocco di codice fenced resta aperto a fine contenuto.
+
+    Un fence non chiuso rompe la segmentazione delle entry per l'intero file:
+    ogni entry successiva si fonde nel blocco aperto e sparisce dai tool di
+    analisi. Riusa la regola fence condivisa via _iter_with_fence_state.
+    """
+    state = False
+    for _line, in_fence in _iter_with_fence_state(content):
+        state = in_fence
+    return state
+
+
 # Public re-export for cross-module use (e.g. tools/audit_progetti).
 split_entries_respecting_fences = _split_entries_respecting_fences
+
+
+def _split_heading(header: str) -> tuple[str, str]:
+    """Divide l'intestazione di una entry in (progetto, descrizione).
+
+    Accetta sia il separatore ASCII " - " sia l'em-dash " — " (U+2014); divide
+    sul primo che compare. Nessun separatore -> tutta l'intestazione e' il
+    progetto. Entrambi i separatori sono lunghi 3 caratteri (spazio+segno+spazio).
+    """
+    positions = [p for p in (header.find(" - "), header.find(" — ")) if p != -1]
+    if not positions:
+        return header.strip(), ""
+    idx = min(positions)
+    return header[:idx].strip(), header[idx + 3 :].strip()
 
 
 def parse_entries(content: str) -> list[DiaryEntry]:
@@ -218,12 +246,8 @@ def parse_entries(content: str) -> list[DiaryEntry]:
         lines = part.split("\n")
         header = lines[0][4:].strip()  # Rimuovi "### "
 
-        # Parsa header: "{Progetto} - {Descrizione}"
-        if " - " in header:
-            progetto, descrizione = header.split(" - ", 1)
-        else:
-            progetto = header
-            descrizione = ""
+        # Parsa header: "{Progetto} - {Descrizione}" (accetta anche em-dash)
+        progetto, descrizione = _split_heading(header)
 
         # Controlla se è una sezione speciale
         # Rimuovi versioni tra parentesi per il check (es. "Deploy (v1.2.3)" -> "Deploy")
