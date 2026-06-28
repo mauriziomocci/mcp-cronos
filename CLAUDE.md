@@ -30,7 +30,7 @@ uv run ruff check src/mcp_cronos/
 ```
 src/mcp_cronos/
   __init__.py           # Package entry point, version
-  server.py             # MCP server, tool definitions and dispatch (17 tools)
+  server.py             # MCP server, tool definitions and dispatch (18 tools)
   config.py             # Configuration: TOML loading, CronosConfig singleton
   i18n.py               # Language packs (Italian, English), LanguagePack dataclass
   template_loader.py    # LLM template loading with user override support
@@ -55,6 +55,7 @@ src/mcp_cronos/
     audit_progetti.py     # cronos_audit_progetti (scan headings, cluster names, generate bozza_toml)
     dossier.py            # cronos_progetto (full project/system story: timeline, refs, per-component counts, blockers)
     statistiche.py        # cronos_statistiche (work distribution by project/system: entry counts, days, quota_pct, per-month trend)
+    riferimento.py        # cronos_riferimento (cross-reference search: timeline of every diary entry mentioning a ticket/MR/repo, with projects and systems)
   utils/
     dates.py            # Date parsing, file path calculation, standup title (i18n-aware)
     markdown.py         # Diary file parsing, entry extraction, markdown rendering
@@ -81,6 +82,7 @@ src/mcp_cronos/
 - Standup: `cronos_riassunto_standup` -> LLM generates message
 - Project/system story: `cronos_progetto` returns the full per-project or per-system dossier (chronological timeline, aggregated references, per-component counts, blockers) — read-only, capped output
 - Work distribution: `cronos_statistiche` gives work distribution by project and system over a period (entry counts, distinct days, per-system quota_pct, per-month activity trend) — read-only, capped output
+- Cross-reference search: `cronos_riferimento` traces a reference (ticket/MR/repo) across the diary — every entry mentioning it, chronologically, with the projects and systems it spans — read-only, capped output
 
 **Diary file structure**: current per-day folder layout
 `{CRONOS_DIARIO_PATH}/{year}/{month}/{year}-{month}-{day}/` containing `raw.md`
@@ -123,7 +125,7 @@ CHANGE: Technical explanation.
 ```
 
 Types: `feat`, `fix`, `docs`, `refactor`, `test`, `chore`
-Scope: module name (e.g. `server`, `entries`, `reader`, `standup`, `fine_giornata`, `consolida`, `cerca`, `settimana`, `dates`, `markdown`, `templates`, `config`, `leggi_todo`, `lista_mese`, `prepara_domani`, `i18n`, `template_loader`, `workdays`, `gitinfo`, `projects`, `audit_progetti`, `dossier`, `statistiche`)
+Scope: module name (e.g. `server`, `entries`, `reader`, `standup`, `fine_giornata`, `consolida`, `cerca`, `settimana`, `dates`, `markdown`, `templates`, `config`, `leggi_todo`, `lista_mese`, `prepara_domani`, `i18n`, `template_loader`, `workdays`, `gitinfo`, `projects`, `audit_progetti`, `dossier`, `statistiche`, `riferimento`)
 
 **FORBIDDEN**: References to Claude/AI, emoji, Co-Authored-By, attribution lines.
 
@@ -201,4 +203,4 @@ After writing the end-of-day file, commit and push the diary changes.
 
 - **Synchronous I/O**: all file operations are synchronous (pathlib read/write). Acceptable for single-user local diary.
 - **No file locking**: concurrent writes to the same diary file could conflict. Not an issue for single-user use.
-- **Tool dispatch is manual**: `call_tool()` uses if/elif chains instead of a registry. Acceptable for 17 tools.
+- **Tool dispatch is manual**: `call_tool()` uses if/elif chains instead of a registry. Acceptable for 18 tools.

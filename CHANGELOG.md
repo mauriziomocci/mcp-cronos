@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- `cronos_riferimento`: project-aware cross-reference search — the timeline of
+  every diary entry mentioning a given ticket/MR/repo, with the projects and
+  systems it spans.
+
 ## [1.4.0] - 2026-06-27
 
 ### Added
