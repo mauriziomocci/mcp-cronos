@@ -9,6 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- README (both language sections) gains a usage guide — a how-to manual grouping
+  all 19 tools into five workflow-oriented sections (during the day, closing the
+  day, reading the diary back, projects and analytics, setup and maintenance).
+  Task-oriented, Diátaxis how-to style; no parameter duplication — each recipe
+  links to the per-tool reference below it.
 - `cronos_statistiche` now reports a `copertura` block — how much of the written
   work the statistics actually see (`voci_totali`, `voci_mappate`,
   `voci_non_mappate`, `percentuale`, `registro_attivo`). Makes the partial nature

@@ -160,6 +160,207 @@ The simplest way to go from a fresh diary to a fully working project registry is
 
 Repeat step 4 whenever you add new projects or notice gaps. Re-run step 2 whenever the diary has grown and new project names have appeared that are not yet in the registry.
 
+### Usage guide
+
+This section is a practical how-to guide grouped by goal. Each recipe tells you which tool to call and with which key arguments; it does not repeat every parameter — see the [Tools](#tools) reference below for the full signatures. Start here when you want to accomplish something; go to the reference when you need exact parameter names or return-value details.
+
+#### During the day
+
+Use these tools to capture work as it happens, add context to existing entries, note blockers, and check what was planned.
+
+**Log a piece of work.** To record what you did on a project, call [`cronos_aggiungi_entry`](#cronos_aggiungi_entry):
+
+```python
+Tool(name="cronos_aggiungi_entry", arguments={
+    "progetto": "Alpha",
+    "descrizione": "fix login redirect",
+    "jira_ticket": "ABC-123"
+})
+```
+
+This creates today's diary file (and the year/month folder) if they do not exist yet, and appends a `### Alpha - fix login redirect` entry. Omit `jira_ticket` when there is no ticket; supply `repository` and `branch` explicitly or let the tool detect them from git.
+
+**Add a second session to the same project without fragmenting.** If you worked on `Alpha` again later in the day, append a sub-section instead of creating a duplicate heading, using [`cronos_aggiungi_a_progetto`](#cronos_aggiungi_a_progetto):
+
+```python
+Tool(name="cronos_aggiungi_a_progetto", arguments={
+    "progetto": "Alpha",
+    "titolo_fase": "code review pass",
+    "contenuto": "Reviewed PR !42 — left two comments on error handling."
+})
+```
+
+The tool finds the existing `### Alpha` heading and appends an `#### code review pass` block underneath it. If no matching heading exists, it falls back to creating a new standard entry.
+
+**Record a blocker.** Once the diary file exists for today, set the Blockers section with [`cronos_imposta_bloccanti`](#cronos_imposta_bloccanti):
+
+```python
+Tool(name="cronos_imposta_bloccanti", arguments={
+    "bloccanti": "Waiting for Beta team sign-off on the API contract."
+})
+```
+
+Call it again later to overwrite with `"None"` once the blocker is resolved.
+
+**Check what was planned.** To read the to-do list for today (or any day), call [`cronos_leggi_todo`](#cronos_leggi_todo):
+
+```python
+Tool(name="cronos_leggi_todo", arguments={})
+```
+
+If a previous [`cronos_prepara_domani`](#cronos_prepara_domani) run backed up an older plan, its path is reported alongside the current content.
+
+#### Closing the day
+
+The end-of-day is a deliberate two-phase flow. `cronos_fine_giornata` reads the raw entries and returns generation instructions; the AI assistant then drafts the structured content; finally `cronos_scrivi_fine_giornata` persists it to disk. Keep the two calls separate — do not merge them into one step.
+
+**Phase 1 — trigger the end-of-day workflow.** Call [`cronos_fine_giornata`](#cronos_fine_giornata) to get the raw diary and the instructions for generating the four structured outputs (rewritten entries, day summary, technical summary, standup message):
+
+```python
+Tool(name="cronos_fine_giornata", arguments={})
+```
+
+Follow the returned instructions to draft the content. You are editing the narrative here, not writing to disk yet.
+
+**Phase 2 — persist the generated file.** Once the content is ready, call [`cronos_scrivi_fine_giornata`](#cronos_scrivi_fine_giornata) to write `fine-giornata.md`. Optionally pass a todo draft for the next day in the same call to skip a separate [`cronos_prepara_domani`](#cronos_prepara_domani) step:
+
+```python
+Tool(name="cronos_scrivi_fine_giornata", arguments={
+    "contenuto": "... full markdown content ...",
+    "contenuto_todo": "## Tomorrow\n- Review Beta API spec\n- ABC-124 implementation"
+})
+```
+
+When `contenuto_todo` is provided, the next working day's `todo.md` and `raw.md` skeleton are created automatically.
+
+**Prepare the next day separately.** If you prefer to plan tomorrow as a dedicated step (for example, after a standup where priorities shifted), call [`cronos_prepara_domani`](#cronos_prepara_domani) on its own:
+
+```python
+Tool(name="cronos_prepara_domani", arguments={
+    "contenuto_todo": "## 2026-07-01\n- ABC-124 implementation\n- Deploy to staging"
+})
+```
+
+The tool targets the next working day automatically, skipping weekends and public holidays. Supply an explicit `data` to plan a specific future date instead.
+
+**Generate a standup message.** To produce a polished, narrative standup from yesterday's diary (or any date range), call [`cronos_riassunto_standup`](#cronos_riassunto_standup):
+
+```python
+Tool(name="cronos_riassunto_standup", arguments={})
+```
+
+The tool returns the raw diary content together with style instructions so the AI assistant can draft a fluent message free of implementation details. Supply `data_inizio` and `data_fine` to cover a multi-day span (for example, after a long weekend).
+
+#### Reading the diary back
+
+Use these tools to retrieve what was written, whether you need a single day, a week, a month, or a targeted search.
+
+**Read one day or a range.** Call [`cronos_leggi_diario`](#cronos_leggi_diario) with no arguments to get today's diary, a single date, a date range, or the last N days:
+
+```python
+# Today
+Tool(name="cronos_leggi_diario", arguments={})
+
+# A specific day
+Tool(name="cronos_leggi_diario", arguments={"data": "2026-06-20"})
+
+# Last 5 days
+Tool(name="cronos_leggi_diario", arguments={"ultimi_giorni": 5})
+```
+
+The `riepilogo` field in the response reports which dates had no file, so you can spot gaps at a glance.
+
+**Get a weekly overview.** To see the current week grouped by project (how many days each project was active and what was done), call [`cronos_settimana`](#cronos_settimana):
+
+```python
+Tool(name="cronos_settimana", arguments={})
+```
+
+Pass `data` with any date in the target week to look at a past week instead.
+
+**Check the month at a glance.** To see which artifacts exist for each day in a month (`raw.md`, `todo.md`, `fine-giornata.md`), call [`cronos_lista_mese`](#cronos_lista_mese):
+
+```python
+Tool(name="cronos_lista_mese", arguments={"mese": 6, "anno": 2026})
+```
+
+The entry count per day is shown for days whose main file is readable. This is the fastest way to spot days you forgot to close.
+
+**Search across the full diary.** To find every diary entry mentioning a keyword, ticket, or pattern, call [`cronos_cerca`](#cronos_cerca):
+
+```python
+Tool(name="cronos_cerca", arguments={
+    "query": "ABC-123",
+    "ultimi_giorni": 90
+})
+```
+
+The `query` field supports regular expressions. Narrow the scope with `tipo` (`"raw"`, `"todo"`, `"chiusura"`) when you only want to search one source type.
+
+#### Projects and analytics
+
+Use these tools to understand how time was spent, reconstruct project histories, and trace references across the diary.
+
+**List active projects.** To see every project mentioned in the last 30 days (or any period), with occurrence counts and first/last dates, call [`cronos_lista_progetti`](#cronos_lista_progetti):
+
+```python
+Tool(name="cronos_lista_progetti", arguments={"ultimi_giorni": 30})
+```
+
+When a project registry is configured, names are resolved to their canonical form and grouped by parent system.
+
+**Get the full story of a project.** To reconstruct the chronological timeline of work on `Alpha`, including aggregated Jira tickets, branches, and per-component entry counts, call [`cronos_progetto`](#cronos_progetto):
+
+```python
+Tool(name="cronos_progetto", arguments={"progetto": "Alpha", "ultimi_giorni": 90})
+```
+
+If `Alpha` is a system in the registry (with components underneath it), the tool rolls up all components automatically and sets `e_sistema: true` in the response. This is the tool for "tell me the story of Alpha" or "what is still open on Alpha".
+
+**Analyse where time went.** To see the work distribution across projects and systems over a period, call [`cronos_statistiche`](#cronos_statistiche):
+
+```python
+Tool(name="cronos_statistiche", arguments={"ultimi_giorni": 90})
+```
+
+The `per_sistema` block shows each system's share of total entries (`quota_pct`). The `copertura` block tells you what fraction of your entries actually map to a registered project — `voci_mappate` vs `voci_totali` — so you can tell at a glance whether the registry covers your real work or has gaps.
+
+**Trace a ticket or MR across the diary.** To find every diary entry that mentions ticket `ABC-123`, MR `!456`, or repository `api-gateway`, call [`cronos_riferimento`](#cronos_riferimento):
+
+```python
+Tool(name="cronos_riferimento", arguments={"riferimento": "ABC-123", "ultimi_giorni": 180})
+```
+
+The response gives you the full chronological thread with one snippet per match, plus the projects and systems the reference spans. Use this when a ticket lasted weeks and you need to reconstruct what happened and when.
+
+#### Setup and maintenance
+
+Use these tools once to bootstrap the project registry and then periodically to keep the diary clean.
+
+**Bootstrap the project registry.** After writing several weeks of diary entries, call [`cronos_audit_progetti`](#cronos_audit_progetti) to scan all headings, cluster spelling variants, and generate a ready-to-paste `[cronos.projects]` draft:
+
+```python
+Tool(name="cronos_audit_progetti", arguments={"ultimi_giorni": 180})
+```
+
+The `bozza_toml` field in the response is valid TOML you can copy directly into `cronos.toml`. Add `sistema` fields where you want hierarchy. Re-run whenever the diary has grown and new project names have appeared.
+
+**Check diary hygiene.** To detect structural problems — unmapped entries, unclosed code fences, missing working days, days that were never closed — call [`cronos_igiene`](#cronos_igiene):
+
+```python
+Tool(name="cronos_igiene", arguments={"ultimi_giorni": 180})
+```
+
+Each problem comes with a `gravita` level (`critico`, `avviso`, `info`) and an actionable `suggerimento`. A `critico` unclosed code fence will silently corrupt all analysis tools for that day and should be fixed immediately. Run `cronos_igiene` regularly (weekly or after adding new projects) to keep the diary in good shape.
+
+**Consolidate a fragmented day.** If a day's `raw.md` has duplicate or scattered entries for the same project, call [`cronos_consolida_diario`](#cronos_consolida_diario) to get analysis and rewriting instructions:
+
+```python
+Tool(name="cronos_consolida_diario", arguments={"data": "2026-06-27"})
+```
+
+The tool is read-only: it returns instructions for the AI assistant to rewrite the file coherently. You review the proposed content before any write happens.
+
 ### Tools
 
 #### `cronos_aggiungi_entry`
@@ -747,6 +948,207 @@ Il modo piu' semplice per passare da un diario grezzo a un registry dei progetti
 4. **Esegui `cronos_igiene`**: verifica che ogni intestazione risolva a un progetto registrato, segnala i giorni lavorativi senza diario, le fence di codice non chiuse e le giornate mai chiuse. Segui i suggerimenti per tenere il diario pulito.
 
 Ripeti il passo 4 ogni volta che aggiungi nuovi progetti o noti lacune. Riesegui il passo 2 quando il diario e' cresciuto e sono comparsi nomi di progetto non ancora nel registry.
+
+### Guida all'uso
+
+Questa sezione e' una guida pratica ai casi d'uso, organizzata per obiettivo. Ogni ricetta indica quale tool chiamare e con quali argomenti chiave; i parametri completi non vengono ripetuti qui — per le firme complete consulta il [riferimento Tool](#tool) qui sotto. Parti da questa sezione quando vuoi ottenere un risultato; vai al riferimento quando hai bisogno del nome esatto di un parametro o dei dettagli del valore di ritorno.
+
+#### Durante la giornata
+
+Questi tool servono a catturare il lavoro man mano che avviene, aggiungere contesto alle entry esistenti, annotare i bloccanti e verificare cosa era pianificato.
+
+**Registra un'attivita'.** Per tracciare cosa hai fatto su un progetto, chiama [`cronos_aggiungi_entry`](#cronos_aggiungi_entry):
+
+```python
+Tool(name="cronos_aggiungi_entry", arguments={
+    "progetto": "Alpha",
+    "descrizione": "fix redirect login",
+    "jira_ticket": "ABC-123"
+})
+```
+
+Crea il file del diario di oggi (e la cartella anno/mese) se non esistono, e aggiunge un'entry `### Alpha - fix redirect login`. Ometti `jira_ticket` quando non c'e' un ticket; fornisci `repository` e `branch` esplicitamente oppure lascia che il tool li rilevi da git.
+
+**Aggiungi una seconda sessione allo stesso progetto senza frammentare.** Se hai lavorato di nuovo su `Alpha` nel corso della giornata, appendi una sotto-sezione invece di creare un secondo heading duplicato, usando [`cronos_aggiungi_a_progetto`](#cronos_aggiungi_a_progetto):
+
+```python
+Tool(name="cronos_aggiungi_a_progetto", arguments={
+    "progetto": "Alpha",
+    "titolo_fase": "code review",
+    "contenuto": "Revisionata PR !42 — lasciati due commenti sulla gestione degli errori."
+})
+```
+
+Il tool trova l'heading `### Alpha` esistente e aggiunge un blocco `#### code review` sotto di esso. Se non trova un heading corrispondente, crea una nuova entry standard.
+
+**Registra un bloccante.** Una volta che il file del diario di oggi esiste, imposta la sezione Bloccanti con [`cronos_imposta_bloccanti`](#cronos_imposta_bloccanti):
+
+```python
+Tool(name="cronos_imposta_bloccanti", arguments={
+    "bloccanti": "In attesa del sign-off del team Beta sul contratto API."
+})
+```
+
+Richiamalo piu' tardi con `"Nessuno"` per aggiornarlo quando il bloccante e' risolto.
+
+**Controlla cosa era pianificato.** Per leggere la lista dei todo di oggi (o di qualsiasi giorno), chiama [`cronos_leggi_todo`](#cronos_leggi_todo):
+
+```python
+Tool(name="cronos_leggi_todo", arguments={})
+```
+
+Se una precedente esecuzione di [`cronos_prepara_domani`](#cronos_prepara_domani) ha salvato un backup del piano precedente, il suo path viene riportato insieme al contenuto corrente.
+
+#### Chiudere la giornata
+
+La chiusura e' deliberatamente un flusso in due fasi. `cronos_fine_giornata` legge le entry grezze e restituisce le istruzioni di generazione; l'assistente AI redige poi il contenuto strutturato; infine `cronos_scrivi_fine_giornata` lo persiste su disco. Tieni le due chiamate separate — non unirle in un unico passo.
+
+**Fase 1 — avvia il workflow di fine giornata.** Chiama [`cronos_fine_giornata`](#cronos_fine_giornata) per ricevere il diario grezzo e le istruzioni per generare i quattro output strutturati (entry riscritte, riassunto della giornata, riassunto tecnico, messaggio standup):
+
+```python
+Tool(name="cronos_fine_giornata", arguments={})
+```
+
+Segui le istruzioni restituite per redigere il contenuto. In questa fase stai costruendo la narrativa, non stai ancora scrivendo su disco.
+
+**Fase 2 — persisti il file generato.** Quando il contenuto e' pronto, chiama [`cronos_scrivi_fine_giornata`](#cronos_scrivi_fine_giornata) per scrivere `fine-giornata.md`. Opzionalmente passa una bozza di todo per il giorno successivo nella stessa chiamata, evitando un passo separato con [`cronos_prepara_domani`](#cronos_prepara_domani):
+
+```python
+Tool(name="cronos_scrivi_fine_giornata", arguments={
+    "contenuto": "... contenuto markdown completo ...",
+    "contenuto_todo": "## Domani\n- Revisionare spec API Beta\n- Implementazione ABC-124"
+})
+```
+
+Quando `contenuto_todo` e' fornito, `todo.md` e lo scheletro `raw.md` del prossimo giorno lavorativo vengono creati automaticamente.
+
+**Prepara il giorno dopo separatamente.** Se preferisci pianificare il domani come passo dedicato (per esempio dopo uno standup in cui le priorita' sono cambiate), chiama [`cronos_prepara_domani`](#cronos_prepara_domani) da solo:
+
+```python
+Tool(name="cronos_prepara_domani", arguments={
+    "contenuto_todo": "## 2026-07-01\n- Implementazione ABC-124\n- Deploy su staging"
+})
+```
+
+Il tool calcola automaticamente il prossimo giorno lavorativo, escludendo weekend e festivi. Fornisci `data` esplicita per pianificare un giorno futuro specifico.
+
+**Genera il messaggio per lo standup.** Per produrre un messaggio di standup narrativo e professionale dal diario di ieri (o da qualsiasi data), chiama [`cronos_riassunto_standup`](#cronos_riassunto_standup):
+
+```python
+Tool(name="cronos_riassunto_standup", arguments={})
+```
+
+Il tool restituisce il contenuto grezzo del diario insieme a istruzioni di stile affinche' l'assistente AI produca un messaggio fluido, privo di dettagli implementativi. Fornisci `data_inizio` e `data_fine` per coprire un arco di piu' giorni (per esempio dopo un weekend lungo).
+
+#### Rileggere il diario
+
+Questi tool servono a recuperare quanto scritto, che si tratti di un singolo giorno, una settimana, un mese o una ricerca mirata.
+
+**Leggi un giorno o un intervallo.** Chiama [`cronos_leggi_diario`](#cronos_leggi_diario) senza argomenti per il diario di oggi, con una data singola, un range di date o gli ultimi N giorni:
+
+```python
+# Oggi
+Tool(name="cronos_leggi_diario", arguments={})
+
+# Un giorno specifico
+Tool(name="cronos_leggi_diario", arguments={"data": "2026-06-20"})
+
+# Ultimi 5 giorni
+Tool(name="cronos_leggi_diario", arguments={"ultimi_giorni": 5})
+```
+
+Il campo `riepilogo` nella risposta riporta le date prive di file, in modo da individuare le lacune a colpo d'occhio.
+
+**Panoramica settimanale.** Per vedere la settimana corrente raggruppata per progetto (quanti giorni e' stato attivo ciascun progetto e cosa e' stato fatto), chiama [`cronos_settimana`](#cronos_settimana):
+
+```python
+Tool(name="cronos_settimana", arguments={})
+```
+
+Passa `data` con qualsiasi data nella settimana target per guardare una settimana passata.
+
+**Controlla il mese a colpo d'occhio.** Per vedere quali artefatti esistono per ogni giorno di un mese (`raw.md`, `todo.md`, `fine-giornata.md`), chiama [`cronos_lista_mese`](#cronos_lista_mese):
+
+```python
+Tool(name="cronos_lista_mese", arguments={"mese": 6, "anno": 2026})
+```
+
+Il conteggio delle entry per giorno e' visibile per i giorni con file principale leggibile. E' il modo piu' rapido per individuare le giornate mai chiuse.
+
+**Ricerca in tutto il diario.** Per trovare ogni entry che menziona una parola chiave, un ticket o uno schema, chiama [`cronos_cerca`](#cronos_cerca):
+
+```python
+Tool(name="cronos_cerca", arguments={
+    "query": "ABC-123",
+    "ultimi_giorni": 90
+})
+```
+
+Il campo `query` supporta espressioni regolari. Restringi l'ambito con `tipo` (`"raw"`, `"todo"`, `"chiusura"`) quando vuoi cercare solo in una sorgente.
+
+#### Progetti e analisi
+
+Questi tool servono a capire come e' stato distribuito il tempo, ricostruire la storia dei progetti e tracciare riferimenti nel diario.
+
+**Elenca i progetti attivi.** Per vedere ogni progetto menzionato negli ultimi 30 giorni (o qualsiasi periodo), con conteggio occorrenze e date di prima/ultima attivita', chiama [`cronos_lista_progetti`](#cronos_lista_progetti):
+
+```python
+Tool(name="cronos_lista_progetti", arguments={"ultimi_giorni": 30})
+```
+
+Quando e' configurato un registry dei progetti, i nomi vengono risolti nella forma canonica e raggruppati per sistema padre.
+
+**Ricostruisci la storia di un progetto.** Per ricostruire la timeline cronologica del lavoro su `Alpha`, inclusi ticket Jira aggregati, branch e conteggio entry per componente, chiama [`cronos_progetto`](#cronos_progetto):
+
+```python
+Tool(name="cronos_progetto", arguments={"progetto": "Alpha", "ultimi_giorni": 90})
+```
+
+Se `Alpha` e' un sistema nel registry (con componenti sotto di esso), il tool fa il roll-up automatico e imposta `e_sistema: true` nella risposta. Usa questo tool per "raccontami la storia di Alpha" o "cosa e' rimasto aperto su Alpha".
+
+**Analizza dove e' andato il tempo.** Per vedere la distribuzione del lavoro tra progetti e sistemi in un periodo, chiama [`cronos_statistiche`](#cronos_statistiche):
+
+```python
+Tool(name="cronos_statistiche", arguments={"ultimi_giorni": 90})
+```
+
+Il blocco `per_sistema` mostra la quota di ogni sistema sul totale delle entry (`quota_pct`). Il blocco `copertura` indica quale frazione delle entry mappa realmente a un progetto registrato — `voci_mappate` vs `voci_totali` — cosi' capisci immediatamente se il registry copre il lavoro reale o ha lacune.
+
+**Traccia un ticket o una MR nel diario.** Per trovare ogni entry che menziona il ticket `ABC-123`, la MR `!456` o il repository `api-gateway`, chiama [`cronos_riferimento`](#cronos_riferimento):
+
+```python
+Tool(name="cronos_riferimento", arguments={"riferimento": "ABC-123", "ultimi_giorni": 180})
+```
+
+La risposta restituisce il thread cronologico completo con uno snippet per ogni match, piu' i progetti e i sistemi che il riferimento attraversa. Usalo quando un ticket e' durato settimane e devi ricostruire cosa e' successo e quando.
+
+#### Configurazione e manutenzione
+
+Questi tool si usano una volta sola per costruire il registry dei progetti e poi periodicamente per tenere il diario in ordine.
+
+**Bootstrap del registry dei progetti.** Dopo aver scritto alcune settimane di entry, chiama [`cronos_audit_progetti`](#cronos_audit_progetti) per scansionare tutte le intestazioni, raggruppare le varianti di scrittura e generare una bozza `[cronos.projects]` pronta da incollare:
+
+```python
+Tool(name="cronos_audit_progetti", arguments={"ultimi_giorni": 180})
+```
+
+Il campo `bozza_toml` nella risposta e' TOML valido che puoi copiare direttamente nel `cronos.toml`. Aggiungi i campi `sistema` dove vuoi la gerarchia. Riesegui quando il diario e' cresciuto e sono comparsi nuovi nomi di progetto.
+
+**Controlla l'igiene del diario.** Per rilevare problemi strutturali — entry non mappate, fence di codice non chiuse, giorni lavorativi mancanti, giornate mai chiuse — chiama [`cronos_igiene`](#cronos_igiene):
+
+```python
+Tool(name="cronos_igiene", arguments={"ultimi_giorni": 180})
+```
+
+Ogni problema ha un livello `gravita` (`critico`, `avviso`, `info`) e un `suggerimento` azionabile. Una fence non chiusa con gravita' `critico` corrompe silenziosamente tutti i tool di analisi per quel giorno e va corretta subito. Esegui `cronos_igiene` regolarmente (ogni settimana o dopo aver aggiunto nuovi progetti) per mantenere il diario in buono stato.
+
+**Consolida una giornata frammentata.** Se il `raw.md` di un giorno ha entry duplicate o sparse per lo stesso progetto, chiama [`cronos_consolida_diario`](#cronos_consolida_diario) per ottenere analisi e istruzioni di riscrittura:
+
+```python
+Tool(name="cronos_consolida_diario", arguments={"data": "2026-06-27"})
+```
+
+Il tool e' read-only: restituisce le istruzioni affinche' l'assistente AI riscriva il file in modo coerente. Puoi rivedere il contenuto proposto prima che venga scritto qualsiasi file.
 
 ### Tool
 
