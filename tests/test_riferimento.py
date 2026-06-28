@@ -93,3 +93,22 @@ def test_cronos_riferimento_tool_registered():
     from mcp_cronos.server import TOOLS
 
     assert any(t.name == "cronos_riferimento" for t in TOOLS)
+
+
+def test_riferimento_max_voci_zero_is_intentional(tmp_diario):
+    # max_voci=0 -> empty timeline but num_voci/troncato still report the count.
+    _reg(tmp_diario)
+    _day(
+        tmp_diario,
+        "2026-04-08",
+        "# T\n\n## Cosa ho fatto ieri\n\n### SmarTicket - x\n\ntocca DVT-9 qui.\n\n---\n\n"
+        "## Bloccanti\n\nNessuno\n",
+    )
+    from mcp_cronos.config import _reset_config
+    from mcp_cronos.tools.riferimento import traccia_riferimento
+
+    _reset_config()
+    r = traccia_riferimento("DVT-9", data_inizio="2026-04-01", data_fine="2026-04-30", max_voci=0)
+    assert r["num_voci"] == 1
+    assert r["timeline"] == []
+    assert r["troncato"] is True

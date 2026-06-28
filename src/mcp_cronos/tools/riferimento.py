@@ -48,6 +48,8 @@ def traccia_riferimento(
             continue
         content = file_path.read_text(encoding="utf-8")
         for part in split_entries_respecting_fences(content):
+            # Match the reference anywhere in the entry (heading or body),
+            # case-insensitive.
             if needle not in part.lower():
                 continue
             head_body = part.split("\n", 1)
@@ -72,7 +74,7 @@ def traccia_riferimento(
     max_voci = max(0, max_voci)
     troncato = len(timeline) > max_voci
     timeline_out = timeline[len(timeline) - max_voci :] if troncato else timeline
-    sistemi = sorted({s for p in progetti if (s := system_of(p))})
+    sistemi = sorted({s for p in progetti if (s := system_of(p)) is not None})
     date_all = sorted(giorni)
 
     return {
