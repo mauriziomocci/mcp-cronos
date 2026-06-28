@@ -33,6 +33,21 @@ def test_iter_diary_days_yields_entries_and_skips_missing(tmp_diario):
     assert "body B" in bodies[1]
 
 
+def test_iter_diary_days_strips_trailing_separator(tmp_diario):
+    _day(
+        tmp_diario,
+        "2026-04-08",
+        "# T\n\n## Cosa ho fatto ieri\n\n### A - x\n\nsome body\n\n---\n\n"
+        "## Bloccanti\n\nNessuno\n",
+    )
+    from mcp_cronos.utils.scan import iter_diary_days
+
+    _d, _c, entries = next(iter(iter_diary_days(date(2026, 4, 8), date(2026, 4, 8))))
+    assert entries[0][0] == "A - x"
+    assert "some body" in entries[0][1]
+    assert "---" not in entries[0][1]
+
+
 def test_iter_diary_days_fence_aware(tmp_diario):
     _day(
         tmp_diario,

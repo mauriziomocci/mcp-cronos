@@ -17,8 +17,8 @@ def iter_diary_days(start: date, end: date) -> Iterator[tuple[date, str, list[tu
     """Yield (day, content, entries) for each existing diary file in [start, end].
 
     entries is a list of (heading, body): heading is the text after '### ' of a
-    top-level entry; body is the rest of that entry chunk. Segmentation is
-    fence-aware (fenced code blocks are opaque).
+    top-level entry; body is the entry chunk content with the trailing '---'
+    separator removed. Segmentation is fence-aware (fenced code blocks are opaque).
     """
     for d in get_date_range(start, end):
         file_path = get_file_path(d)
@@ -33,5 +33,13 @@ def iter_diary_days(start: date, end: date) -> Iterator[tuple[date, str, list[tu
                 continue
             heading = first[4:].strip()
             body = head_body[1] if len(head_body) > 1 else ""
+            # Strip the trailing '---' entry separator (and anything after it,
+            # such as a ## section header that follows the last entry). The
+            # splitter cuts at '### ' only, so the separator may not be the
+            # very last token in the chunk.
+            sep_idx = body.find("\n---")
+            if sep_idx != -1:
+                body = body[:sep_idx]
+            body = body.strip()
             entries.append((heading, body))
         yield d, content, entries

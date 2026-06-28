@@ -167,8 +167,6 @@ def lista_progetti(
         start = today - timedelta(days=ultimi_giorni - 1)
         end = today
 
-    dates_to_read = get_date_range(start, end)
-
     # Raccogli progetti canonici e conteggi
     progetti_count: dict[str, int] = {}
     progetti_date: dict[str, list[str]] = {}
@@ -198,7 +196,7 @@ def lista_progetti(
             per_sistema[sistema] = per_sistema.get(sistema, 0) + occ
 
     return {
-        "periodo": {"da": str(start), "a": str(end), "giorni_analizzati": len(dates_to_read)},
+        "periodo": {"da": str(start), "a": str(end), "giorni_analizzati": (end - start).days + 1},
         "totale_progetti": len(progetti_count),
         "max_progetti": max_progetti,
         "troncato": troncato,
