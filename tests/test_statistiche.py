@@ -129,3 +129,39 @@ def test_statistiche_system_includes_direct_tagged_work(tmp_diario):
     pp = {p["nome"]: p for p in r["per_progetto"]}
     assert pp["Teseo"]["sistema"] is None
     assert pp["Teseo"]["voci"] == 1
+
+
+def test_statistiche_copertura_registro_popolato(tmp_diario):
+    _reg(tmp_diario)
+    # 2 mapped (SmarTicket, Goceano) + 1 unmapped heading
+    _day(tmp_diario, "2026-04-08", "SmarTicket - a", "Goceano - b", "Sconosciuto - c")
+    from mcp_cronos.config import _reset_config
+    from mcp_cronos.tools.statistiche import statistiche
+
+    _reset_config()
+    r = statistiche(data_inizio="2026-04-01", data_fine="2026-04-30")
+
+    cop = r["copertura"]
+    assert cop["registro_attivo"] is True
+    assert cop["voci_totali"] == 3
+    assert cop["voci_mappate"] == 2
+    assert cop["voci_non_mappate"] == 1
+    assert cop["percentuale"] == 66.7
+
+
+def test_statistiche_copertura_registro_vuoto_e_cento(tmp_diario):
+    # No registry -> pass-through: every heading maps, coverage 100%.
+    (tmp_diario / "cronos.toml").write_text("[cronos]\ngit = false\n", encoding="utf-8")
+    _day(tmp_diario, "2026-04-08", "Qualcosa - a", "Altro - b")
+    from mcp_cronos.config import _reset_config
+    from mcp_cronos.tools.statistiche import statistiche
+
+    _reset_config()
+    r = statistiche(data_inizio="2026-04-01", data_fine="2026-04-30")
+
+    cop = r["copertura"]
+    assert cop["registro_attivo"] is False
+    assert cop["voci_totali"] == 2
+    assert cop["voci_mappate"] == 2
+    assert cop["voci_non_mappate"] == 0
+    assert cop["percentuale"] == 100.0

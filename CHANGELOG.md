@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- `cronos_statistiche` now reports a `copertura` block — how much of the written
+  work the statistics actually see (`voci_totali`, `voci_mappate`,
+  `voci_non_mappate`, `percentuale`, `registro_attivo`). Makes the partial nature
+  of project-tagged analytics explicit instead of silently undercounting.
+
 ## [1.6.0] - 2026-06-28
 
 ### Added
