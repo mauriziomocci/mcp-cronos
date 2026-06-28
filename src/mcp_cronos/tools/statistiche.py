@@ -21,9 +21,9 @@ from datetime import timedelta
 from typing import Optional
 
 from mcp_cronos.config import load_config
-from mcp_cronos.utils.dates import get_date_range, get_file_path, get_today, parse_date
-from mcp_cronos.utils.markdown import split_entries_respecting_fences
+from mcp_cronos.utils.dates import get_today, parse_date
 from mcp_cronos.utils.projects import canonical_projects, system_of
+from mcp_cronos.utils.scan import iter_diary_days
 
 
 def statistiche(
@@ -51,17 +51,10 @@ def statistiche(
     per_mese: dict[str, int] = {}
     giorni_attivi: set[str] = set()
 
-    for d in get_date_range(start, end):
-        file_path = get_file_path(d)
-        if not file_path.exists():
-            continue
-        content = file_path.read_text(encoding="utf-8")
+    for d, _content, entries in iter_diary_days(start, end):
         mese = str(d)[:7]
-        for part in split_entries_respecting_fences(content):
-            first = part.split("\n", 1)[0]
-            if not first.startswith("### "):
-                continue
-            projects = canonical_projects(first[4:].strip())
+        for heading, _body in entries:
+            projects = canonical_projects(heading)
             if not projects:
                 continue
             giorni_attivi.add(str(d))

@@ -8,9 +8,9 @@ the registry is simple for any user. Read-only: it never writes cronos.toml.
 from datetime import timedelta
 from typing import Optional
 
-from mcp_cronos.utils.dates import get_date_range, get_file_path, get_today, parse_date
-from mcp_cronos.utils.markdown import split_entries_respecting_fences
+from mcp_cronos.utils.dates import get_today, parse_date
 from mcp_cronos.utils.projects import normalize_project, project_tokens
+from mcp_cronos.utils.scan import iter_diary_days
 
 
 def audit_progetti(
@@ -34,17 +34,9 @@ def audit_progetti(
         end = today
 
     clusters: dict[str, dict] = {}
-    for d in get_date_range(start, end):
-        file_path = get_file_path(d)
-        if not file_path.exists():
-            continue
-        content = file_path.read_text(encoding="utf-8")
-        for part in split_entries_respecting_fences(content):
-            first_line = part.split("\n", 1)[0]
-            if not first_line.startswith("### "):
-                continue
-            header = first_line[4:].strip()
-            for token in project_tokens(header):
+    for _d, _content, entries in iter_diary_days(start, end):
+        for heading, _body in entries:
+            for token in project_tokens(heading):
                 key = normalize_project(token)
                 if not key:
                     continue
