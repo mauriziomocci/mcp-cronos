@@ -183,7 +183,7 @@ def igiene_diario(
             )
 
     if not registro_attivo:
-        note.append("registro vuoto: check progetto_non_registrato saltato")
+        note.append("registro vuoto: check voci_non_mappate saltato")
 
     # Appende il finding aggregato voci_non_mappate (dopo pass 2, dopo la nota registro vuoto)
     if registro_attivo and nm_voci > 0:

@@ -18,7 +18,7 @@ Nuovo tool `cronos_igiene` (funzione `igiene_diario`), sola lettura. Scandisce i
 
 Risolve il periodo come gli altri tool. Esegue quattro controlli:
 
-1. **progetto_non_registrato** — per ogni voce `### ...`, se il registro `[cronos.projects]` e' popolato e `canonical_projects(intestazione)` e' vuoto, la voce non appartiene ad alcun progetto noto: lavoro invisibile a dossier/statistiche. Si segnala con data + intestazione. SALTATO (con nota) se il registro e' vuoto: in pass-through tutto risolve, il check non avrebbe senso. E' il check di valore principale.
+1. **voci_non_mappate** (AGGREGATO) — conta le voci `### ...` la cui intestazione, con registro `[cronos.projects]` popolato, non risolve ad alcun progetto noto (`canonical_projects` vuoto): lavoro invisibile a dossier/statistiche. NON si emette un problema per voce — la verifica sul diario reale ne ha prodotti 523, annegando il report. Si emette UN SOLO finding aggregato col totale voci, i giorni distinti e qualche intestazione di esempio, delegando il raggruppamento dettagliato a `cronos_audit_progetti` (nato per quello: niente duplicazione della logica di clustering). SALTATO (con nota) se il registro e' vuoto: in pass-through tutto risolve. E' il check di valore principale, ma in forma aggregata e azionabile (gravita avviso). Origine della forma aggregata: field-test 2026-06-28.
 
 2. **fence_non_chiusa** — file il cui blocco di codice fenced (``` o ~~~) resta aperto a fine file. Rompe la segmentazione: tutte le voci successive si fondono. Nuovo helper `has_unclosed_fence(content)` in markdown.py che riusa la stessa regola di fence di `_split_entries_respecting_fences` (apertura >=3 caratteri, chiusura stesso carattere e lunghezza, niente info-string). Si segnala col file.
 
@@ -34,11 +34,12 @@ Ogni problema e' AZIONABILE: oltre a `tipo`/`data`/`dettaglio` porta una `gravit
 {
   "periodo": {"da": "...", "a": "...", "giorni_analizzati": 180},
   "registro_attivo": true,
-  "riepilogo": "6 problemi: 0 critici, 3 avvisi, 3 info — 3 voci fuori registro, 2 giorni feriali senza diario, 1 giornata non chiusa.",
+  "riepilogo": "12 problemi: 0 critici, 1 avviso, 11 info — 23 voci fuori registro (in 9 giorni), 8 giorni feriali senza diario, 3 giornate non chiuse.",
   "problemi": [
-    {"tipo": "progetto_non_registrato", "gravita": "avviso", "data": "2026-06-27",
-     "dettaglio": "Supporto / Ticket Odoo - HT17969 ...",
-     "suggerimento": "Intestazione non mappata ad alcun progetto del registro: questa voce non compare in dossier/statistiche. Aggiungi un alias in [cronos.projects], oppure rilancia cronos_audit_progetti per rigenerare la bozza."},
+    {"tipo": "voci_non_mappate", "gravita": "avviso", "data": null,
+     "voci": 23, "giorni": 9, "esempi": ["Code Review MR ...", "Rebase ...", "Analisi branch"],
+     "dettaglio": "23 voci in 9 giorni non mappano ad alcun progetto del registro",
+     "suggerimento": "Lancia cronos_audit_progetti per vederle raggruppate e decidere cosa aggiungere a [cronos.projects]."},
     {"tipo": "fence_non_chiusa", "gravita": "critico", "data": "2026-05-12",
      "dettaglio": "blocco di codice aperto a fine file",
      "suggerimento": "Chiudi il blocco con una riga di soli backtick (```): finche' resta aperto, tutte le voci successive di quel giorno si fondono e spariscono dalle analitiche."},
@@ -49,15 +50,15 @@ Ogni problema e' AZIONABILE: oltre a `tipo`/`data`/`dettaglio` porta una `gravit
      "dettaglio": "raw.md presente, fine-giornata.md assente",
      "suggerimento": "Giornata aperta e mai chiusa: usa cronos_scrivi_fine_giornata per chiuderla."}
   ],
-  "conteggi": {"progetto_non_registrato": 3, "fence_non_chiusa": 0, "giorno_lavorativo_mancante": 2, "chiusura_mancante": 1},
-  "conteggi_gravita": {"critico": 0, "avviso": 3, "info": 3},
-  "totale_problemi": 6,
+  "conteggi": {"voci_non_mappate": 1, "fence_non_chiusa": 0, "giorno_lavorativo_mancante": 8, "chiusura_mancante": 3},
+  "conteggi_gravita": {"critico": 0, "avviso": 1, "info": 11},
+  "totale_problemi": 12,
   "max_problemi": 100, "troncato": false,
-  "note": []        # es. ["registro vuoto: check progetto_non_registrato saltato"]
+  "note": []        # es. ["registro vuoto: check voci_non_mappate saltato"]
 }
 ```
 
-Mappa gravita->tipo: `fence_non_chiusa` = **critico** (corrompe i dati di quel giorno), `progetto_non_registrato` = **avviso** (lavoro intatto ma invisibile alle analitiche), `giorno_lavorativo_mancante`/`chiusura_mancante` = **info**. Il `suggerimento` e' una stringa di rimedio per tipo (generica, nessun dominio). Output compatto e cappato (stile fase B): i problemi sono ordinati per gravita' poi per data; il cap si applica alla lista, mentre `conteggi`/`conteggi_gravita` restano TOTALI (cosi' "troncato" non nasconde quanti problemi reali ci sono).
+Mappa gravita->tipo: `fence_non_chiusa` = **critico** (corrompe i dati di quel giorno), `voci_non_mappate` (aggregato) = **avviso** (lavoro intatto ma invisibile alle analitiche), `giorno_lavorativo_mancante`/`chiusura_mancante` = **info**. Il `suggerimento` e' una stringa di rimedio per tipo (generica, nessun dominio). Output compatto e cappato (stile fase B): i problemi sono ordinati per gravita' poi per data; il cap si applica alla lista, mentre `conteggi`/`conteggi_gravita` restano TOTALI (cosi' "troncato" non nasconde quanti problemi reali ci sono).
 
 ### Aiuto all'utente e usabilita'
 
@@ -87,7 +88,7 @@ Questo trasforma audit+igiene in un ciclo costruisci->mantieni chiaro e document
 
 ## Strategia di test
 Test-first.
-- progetto_non_registrato: con registro popolato, voce con intestazione fuori registro -> segnalata; voce con progetto noto -> no. Con registro vuoto -> check saltato + nota.
+- voci_non_mappate (aggregato): con registro popolato e N voci fuori registro -> UN solo finding con voci=N, giorni e esempi; voce con progetto noto -> non conta. Con registro vuoto -> check saltato + nota.
 - fence_non_chiusa: file con fence aperta -> segnalato; file ben formato -> no. `has_unclosed_fence` testato in isolamento (fence chiusa, aperta, annidata a 4 backtick, nessuna fence).
 - giorno_lavorativo_mancante: buco in giorno feriale -> segnalato; weekend/festivo senza file -> NO.
 - chiusura_mancante: layout nuovo con raw senza fine-giornata -> segnalato; con fine-giornata -> no; giorno legacy -> escluso.
@@ -97,7 +98,7 @@ Test-first.
 - **Documentazione (regole fisse):** README in ENTRAMBE le lingue (sezione `#### cronos_igiene`, esempio NEUTRO), CLAUDE.md (tool count 19, scope `igiene`, albero), e voce in `CHANGELOG.md` sotto `[Unreleased]`.
 
 ## Verifica sul campo
-Dopo l'implementazione, eseguire `igiene_diario()` dal repo contro il diario reale: confermare che le voci tipo "Supporto / Ticket Odoo" emergano come progetto_non_registrato (lavoro reale invisibile alle analitiche), e che i conteggi siano plausibili.
+Dopo l'implementazione, eseguire `igiene_diario()` dal repo contro il diario reale (FATTO 2026-06-28): il finding `voci_non_mappate` ha totalizzato 523 voci in 68 giorni (lavoro reale con intestazioni libere, invisibile alle analitiche), fence_non_chiusa 0, 11 giorni feriali mancanti, 8 giornate non chiuse. Riepilogo leggibile, niente spam. La forma per-voce avrebbe prodotto 523 problemi: da qui la redesign aggregata.
 
 ## Rischi e compromessi
 - **Rumore del doctor**: ironia da evitare. Per questo solo 4 check ad alto segnale, cap, e il check #1 saltato quando il registro e' vuoto. Niente flag su prosa `## `.
