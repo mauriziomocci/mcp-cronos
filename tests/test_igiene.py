@@ -25,14 +25,17 @@ def _day(diario, ymd, body, fine=False):
         (p / "fine-giornata.md").write_text("# chiusura\n", encoding="utf-8")
 
 
-def test_progetto_non_registrato_segnalato(tmp_diario):
+def test_voci_non_mappate_aggregato(tmp_diario):
+    """Una sola voce aggregata (tipo voci_non_mappate) per tutte le voci fuori registro."""
     _reg(tmp_diario)
     _day(
         tmp_diario,
         "2026-04-08",
         "# T\n\n## Cosa ho fatto ieri\n\n"
-        "### SmarTicket - x\n\nlavoro.\n\n---\n\n"
-        "### Sconosciuto - y\n\nniente.\n\n---\n\n"
+        "### SmarTicket - ok\n\nlavoro registrato.\n\n---\n\n"
+        "### SconosciutoA - y\n\nniente.\n\n---\n\n"
+        "### SconosciutoB - y\n\nniente.\n\n---\n\n"
+        "### SconosciutoC - y\n\nniente.\n\n---\n\n"
         "## Bloccanti\n\nNessuno\n",
         fine=True,
     )
@@ -42,17 +45,45 @@ def test_progetto_non_registrato_segnalato(tmp_diario):
     _reset_config()
     result = igiene_diario(data_inizio="2026-04-08", data_fine="2026-04-08")
 
-    problemi_tipo = [p for p in result["problemi"] if p["tipo"] == "progetto_non_registrato"]
-    assert len(problemi_tipo) == 1
-    assert problemi_tipo[0]["gravita"] == "avviso"
-    assert "Sconosciuto" in problemi_tipo[0]["dettaglio"]
+    # Exactly ONE aggregated finding
+    voci_probs = [p for p in result["problemi"] if p["tipo"] == "voci_non_mappate"]
+    assert len(voci_probs) == 1
 
-    # SmarTicket is registered — must NOT appear
-    assert not any(
-        "SmarTicket" in p["dettaglio"]
-        for p in result["problemi"]
-        if p["tipo"] == "progetto_non_registrato"
+    prob = voci_probs[0]
+    assert prob["gravita"] == "avviso"
+    assert prob["voci"] == 3
+    assert prob["giorni"] == 1
+    assert len(prob["esempi"]) >= 1
+
+    # SmarTicket is registered — must NOT appear in esempi
+    assert not any("SmarTicket" in e for e in prob["esempi"])
+
+    # conteggi counts list items per tipo: one aggregated item = 1
+    assert result["conteggi"]["voci_non_mappate"] == 1
+
+    # riepilogo should mention voci fuori registro
+    assert "voci fuori registro" in result["riepilogo"]
+
+
+def test_nessuna_voce_non_mappata_quando_tutto_registrato(tmp_diario):
+    """Nessun problema voci_non_mappate quando tutte le voci sono nel registro."""
+    _reg(tmp_diario)
+    _day(
+        tmp_diario,
+        "2026-04-08",
+        "# T\n\n## Cosa ho fatto ieri\n\n"
+        "### SmarTicket - x\n\nlavoro.\n\n---\n\n"
+        "## Bloccanti\n\nNessuno\n",
+        fine=True,
     )
+    from mcp_cronos.config import _reset_config
+    from mcp_cronos.tools.igiene import igiene_diario
+
+    _reset_config()
+    result = igiene_diario(data_inizio="2026-04-08", data_fine="2026-04-08")
+
+    voci_probs = [p for p in result["problemi"] if p["tipo"] == "voci_non_mappate"]
+    assert len(voci_probs) == 0
 
 
 def test_registro_vuoto_salta_check(tmp_diario):
@@ -71,8 +102,8 @@ def test_registro_vuoto_salta_check(tmp_diario):
     _reset_config()
     result = igiene_diario(data_inizio="2026-04-08", data_fine="2026-04-08")
 
-    # No progetto_non_registrato when registry is empty
-    assert result["conteggi"]["progetto_non_registrato"] == 0
+    # No voci_non_mappate when registry is empty
+    assert result["conteggi"]["voci_non_mappate"] == 0
     assert result["registro_attivo"] is False
     # Note should mention skipped check
     assert any("registro vuoto" in n for n in result["note"])
@@ -174,26 +205,19 @@ def test_chiusura_mancante_solo_layout_nuovo(tmp_diario):
 
 
 def test_cap_e_conteggi_totali(tmp_diario):
+    """Cap applicato a un check per-occorrenza (giorno_lavorativo_mancante)."""
     _reg(tmp_diario)
-    # One day with 4 unknown-project entries
-    entries = "".join(f"### Sconosciuto{i} - y\n\nniente.\n\n---\n\n" for i in range(4))
-    _day(
-        tmp_diario,
-        "2026-04-08",
-        f"# T\n\n## Cosa ho fatto ieri\n\n{entries}## Bloccanti\n\nNessuno\n",
-        fine=True,
-    )
+    # No diary files written; window Wed-Fri 2026-04-08..2026-04-10 (3 missing working days)
     from mcp_cronos.config import _reset_config
     from mcp_cronos.tools.igiene import igiene_diario
 
     _reset_config()
-    result = igiene_diario(data_inizio="2026-04-08", data_fine="2026-04-08", max_problemi=1)
+    result = igiene_diario(data_inizio="2026-04-08", data_fine="2026-04-10", max_problemi=1)
 
     assert len(result["problemi"]) <= 1
     assert result["troncato"] is True
-    # Total counts must remain full (not capped)
     assert result["totale_problemi"] >= 2
-    assert result["conteggi"]["progetto_non_registrato"] >= 2
+    assert result["conteggi"]["giorno_lavorativo_mancante"] >= 2
 
 
 def test_riepilogo_umano(tmp_diario):

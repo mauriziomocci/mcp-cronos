@@ -1,6 +1,6 @@
 """Diary hygiene advisor: read-only scan that reports actionable problems.
 
-Controllo di igiene del diario: segnala voci fuori registro, fence non chiuse,
+Controllo di igiene del diario: segnala voci fuori registro aggregate, fence non chiuse,
 giorni feriali mancanti e giornate non chiuse, con gravita' e suggerimento.
 """
 
@@ -23,16 +23,15 @@ from mcp_cronos.utils.workdays import is_working_day
 
 _GRAVITA = {
     "fence_non_chiusa": "critico",
-    "progetto_non_registrato": "avviso",
+    "voci_non_mappate": "avviso",
     "giorno_lavorativo_mancante": "info",
     "chiusura_mancante": "info",
 }
 
 _SUGGERIMENTI = {
-    "progetto_non_registrato": (
-        "Intestazione non mappata ad alcun progetto del registro: questa voce non "
-        "compare in dossier/statistiche. Aggiungi un alias in [cronos.projects], "
-        "oppure rilancia cronos_audit_progetti per rigenerare la bozza."
+    "voci_non_mappate": (
+        "Lancia cronos_audit_progetti per vederle raggruppate e decidere cosa aggiungere"
+        " a [cronos.projects]."
     ),
     "fence_non_chiusa": (
         "Chiudi il blocco con una riga di soli backtick (```): finche' resta aperto, "
@@ -48,14 +47,6 @@ _SUGGERIMENTI = {
 
 _ORDINE_GRAVITA = {"critico": 0, "avviso": 1, "info": 2}
 
-# etichette per il riepilogo umano: tipo -> (singolare, plurale)
-_ETICHETTE = {
-    "fence_non_chiusa": ("fence aperta", "fence aperte"),
-    "progetto_non_registrato": ("voce fuori registro", "voci fuori registro"),
-    "giorno_lavorativo_mancante": ("giorno feriale senza diario", "giorni feriali senza diario"),
-    "chiusura_mancante": ("giornata non chiusa", "giornate non chiuse"),
-}
-
 
 def _problema(tipo: str, d, dettaglio: str) -> dict:
     """Costruisce un dizionario problema con tipo, gravita', data, dettaglio e suggerimento."""
@@ -68,7 +59,9 @@ def _problema(tipo: str, d, dettaglio: str) -> dict:
     }
 
 
-def _riepilogo(totale: int, conteggi_gravita: dict, conteggi: dict) -> str:
+def _riepilogo(
+    totale: int, conteggi_gravita: dict, conteggi: dict, nm_voci: int, nm_giorni: int
+) -> str:
     """Genera una stringa di riepilogo leggibile per l'utente."""
     if totale == 0:
         return "Nessun problema rilevato nel periodo."
@@ -78,10 +71,28 @@ def _riepilogo(totale: int, conteggi_gravita: dict, conteggi: dict) -> str:
         f"{conteggi_gravita['info']} info"
     )
     frammenti = []
-    for tipo, (sing, plur) in _ETICHETTE.items():
-        n = conteggi[tipo]
-        if n:
-            frammenti.append(f"{n} {sing if n == 1 else plur}")
+
+    # fence_non_chiusa (critico)
+    n = conteggi["fence_non_chiusa"]
+    if n:
+        frammenti.append(f"{n} {'fence aperta' if n == 1 else 'fence aperte'}")
+
+    # voci_non_mappate (avviso) — usa i contatori originali per la descrizione
+    if nm_voci > 0:
+        frammenti.append(f"{nm_voci} voci fuori registro (in {nm_giorni} giorni)")
+
+    # giorno_lavorativo_mancante (info)
+    n = conteggi["giorno_lavorativo_mancante"]
+    if n:
+        frammenti.append(
+            f"{n} {'giorno feriale senza diario' if n == 1 else 'giorni feriali senza diario'}"
+        )
+
+    # chiusura_mancante (info)
+    n = conteggi["chiusura_mancante"]
+    if n:
+        frammenti.append(f"{n} {'giornata non chiusa' if n == 1 else 'giornate non chiuse'}")
+
     coda = " — " + ", ".join(frammenti) if frammenti else ""
     plur_prob = "problema" if totale == 1 else "problemi"
     return f"{totale} {plur_prob}: {sev}{coda}."
@@ -97,9 +108,13 @@ def igiene_diario(
 
     Modalita' sola lettura. Quattro check:
     - fence_non_chiusa: blocco di codice lasciato aperto (gravita' critico);
-    - progetto_non_registrato: intestazione non mappata al registro (avviso);
+    - voci_non_mappate: finding aggregato — N voci in M giorni non mappano al registro (avviso);
     - giorno_lavorativo_mancante: giorno feriale senza file diario (info);
     - chiusura_mancante: giorno aperto (raw.md) ma senza fine-giornata.md (info).
+
+    Il check voci_non_mappate produce un unico finding aggregato (non uno per voce)
+    con i campi voci (conteggio), giorni (giorni distinti) e esempi (fino a 5 intestazioni).
+    Per il dettaglio raggruppato per progetto usa cronos_audit_progetti.
 
     Risoluzione periodo: se data_inizio e data_fine sono entrambi presenti
     sovrascrivono ultimi_giorni; altrimenti la finestra e' [oggi - (ultimi_giorni-1), oggi].
@@ -135,14 +150,22 @@ def igiene_diario(
     problemi: list[dict] = []
     note: list[str] = []
 
-    # Pass 1: giorni con file (scanner): fence, progetto non registrato, chiusura mancante
+    # Accumulatori per il finding aggregato voci_non_mappate
+    nm_voci = 0
+    nm_giorni: set[str] = set()
+    nm_esempi: list[str] = []
+
+    # Pass 1: giorni con file (scanner): fence, voci non mappate (accumulate), chiusura mancante
     for d, content, entries in iter_diary_days(start, end):
         if has_unclosed_fence(content):
             problemi.append(_problema("fence_non_chiusa", d, "blocco di codice aperto a fine file"))
         if registro_attivo:
             for heading, _body in entries:
                 if not canonical_projects(heading):
-                    problemi.append(_problema("progetto_non_registrato", d, heading[:120]))
+                    nm_voci += 1
+                    nm_giorni.add(str(d))
+                    if len(nm_esempi) < 5:
+                        nm_esempi.append(heading[:120])
         if not has_legacy_file(d) and not get_fine_giornata_path(d).exists():
             problemi.append(
                 _problema("chiusura_mancante", d, "raw.md presente, fine-giornata.md assente")
@@ -158,6 +181,24 @@ def igiene_diario(
     if not registro_attivo:
         note.append("registro vuoto: check progetto_non_registrato saltato")
 
+    # Appende il finding aggregato voci_non_mappate (dopo pass 2, dopo la nota registro vuoto)
+    if registro_attivo and nm_voci > 0:
+        problemi.append(
+            {
+                "tipo": "voci_non_mappate",
+                "gravita": "avviso",
+                "data": None,
+                "dettaglio": (
+                    f"{nm_voci} voci in {len(nm_giorni)} giorni non mappano ad alcun "
+                    "progetto del registro"
+                ),
+                "suggerimento": _SUGGERIMENTI["voci_non_mappate"],
+                "voci": nm_voci,
+                "giorni": len(nm_giorni),
+                "esempi": nm_esempi,
+            }
+        )
+
     conteggi = {t: 0 for t in _GRAVITA}
     conteggi_gravita: dict[str, int] = {"critico": 0, "avviso": 0, "info": 0}
     for p in problemi:
@@ -165,14 +206,15 @@ def igiene_diario(
         conteggi_gravita[p["gravita"]] += 1
     totale = len(problemi)
 
-    problemi.sort(key=lambda p: (_ORDINE_GRAVITA[p["gravita"]], p["data"]))
+    # Ordinamento: tollerare data=None (voci_non_mappate)
+    problemi.sort(key=lambda p: (_ORDINE_GRAVITA[p["gravita"]], p.get("data") or ""))
     troncato = totale > max_problemi
     problemi_out = problemi[:max_problemi]
 
     return {
         "periodo": {"da": str(start), "a": str(end), "giorni_analizzati": (end - start).days + 1},
         "registro_attivo": registro_attivo,
-        "riepilogo": _riepilogo(totale, conteggi_gravita, conteggi),
+        "riepilogo": _riepilogo(totale, conteggi_gravita, conteggi, nm_voci, len(nm_giorni)),
         "problemi": problemi_out,
         "conteggi": conteggi,
         "conteggi_gravita": conteggi_gravita,
