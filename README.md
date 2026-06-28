@@ -27,7 +27,8 @@ MCP server for structured daily work diary management — entries, standup summa
 - **Month dashboard**: At-a-glance month view of which artifacts exist per day
 - **Prepare next day**: Create the next working day's folder with todo and raw skeleton
 - **Internationalisation**: Built-in Italian and English language packs, configurable via `cronos.toml`
-- **Git integration**: Automatic commit (and optional push) at end-of-day
+- **Git commits**: Automatic commit (and optional push) of the diary at end-of-day
+- **Reference metadata**: Repository, branch, Jira ticket and GitLab MR are recorded on entries as plain-text references — used for search and roll-up. Cronos does **not** call the Jira or GitLab APIs; there is no live integration.
 
 ### Installation
 
@@ -816,7 +817,8 @@ Section headings, month names, weekday names, title format, and default blocker 
 - **Dashboard mensile**: Vista del mese a colpo d'occhio: quali artefatti esistono per ogni giorno
 - **Prepara domani**: Crea la cartella del prossimo giorno lavorativo con todo e scheletro raw
 - **Internazionalizzazione**: Pacchetti lingua italiano e inglese integrati, configurabili via `cronos.toml`
-- **Integrazione Git**: Commit automatico (e push opzionale) a fine giornata
+- **Commit Git**: Commit automatico (e push opzionale) del diario a fine giornata
+- **Metadati di riferimento**: Repository, branch, ticket Jira e MR GitLab sono registrati sulle entry come riferimenti testuali — usati per ricerca e roll-up. Cronos **non** chiama le API di Jira o GitLab: nessuna integrazione live.
 
 ### Installazione
 
