@@ -133,6 +133,8 @@ Scope: module name (e.g. `server`, `entries`, `reader`, `standup`, `fine_giornat
 
 ## Conventions
 
+> **Documentation is a hard rule (regola ferrea).** Every change to the MCP updates the docs in the SAME cycle, in BOTH language parts of `README.md`: the per-tool `####` reference AND the usage manual (`### Usage guide` / `### Guida all'uso`) how-to recipe, plus `CLAUDE.md` (tool count, tree) and a `CHANGELOG.md` `[Unreleased]` entry. A new tool must appear both in the reference and in its workflow group of the manual; a changed parameter must be reflected in both. Manual examples use real parameter names (checked against the schema) and neutral placeholders only (no domain names).
+
 ### Adding a New Tool
 
 1. Create tool function in `tools/` (new file or existing, depending on domain)
@@ -140,8 +142,8 @@ Scope: module name (e.g. `server`, `entries`, `reader`, `standup`, `fine_giornat
 3. Add handler case in `call_tool()` dispatch in `server.py`
 4. Import the function in `server.py`
 5. Update `__init__.py` docstring
-6. Update `README.md` tool section
-7. Add tests
+6. Add tests
+7. Docs in the same cycle (mandatory): the tool's `####` reference in `README.md` (EN + IT); a how-to recipe in the README usage guide (`### Usage guide` / `### Guida all'uso`), in the right workflow group, both languages; bump the tool count in `CLAUDE.md`; add a `[Unreleased]` entry in `CHANGELOG.md`
 
 ### Modifying an Existing Tool
 
@@ -149,6 +151,7 @@ Scope: module name (e.g. `server`, `entries`, `reader`, `standup`, `fine_giornat
 2. If parameters changed, update `inputSchema` in `server.py`
 3. If description changed, update `Tool.description` in `server.py`
 4. Update tests
+5. Docs in the same cycle if behaviour/parameters/return changed: the tool's `####` reference (EN + IT), its how-to recipe in the README usage guide (EN + IT), and a `[Unreleased]` entry in `CHANGELOG.md`
 
 ### Diary File Format
 
