@@ -369,3 +369,11 @@ def test_has_unclosed_fence():
     assert has_unclosed_fence("````\n```\ninner\n```") is True
     # tilde fence
     assert has_unclosed_fence("~~~\ncode") is True
+
+
+def test_parse_entries_splits_emdash_heading():
+    from mcp_cronos.utils.markdown import parse_entries
+
+    entries = parse_entries("### Alpha — descrizione lunga\n\ncorpo\n")
+    assert entries[0].progetto == "Alpha"
+    assert entries[0].descrizione == "descrizione lunga"

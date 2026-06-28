@@ -179,6 +179,20 @@ def has_unclosed_fence(content: str) -> bool:
 split_entries_respecting_fences = _split_entries_respecting_fences
 
 
+def _split_heading(header: str) -> tuple[str, str]:
+    """Divide l'intestazione di una entry in (progetto, descrizione).
+
+    Accetta sia il separatore ASCII " - " sia l'em-dash " — " (U+2014); divide
+    sul primo che compare. Nessun separatore -> tutta l'intestazione e' il
+    progetto. Entrambi i separatori sono lunghi 3 caratteri (spazio+segno+spazio).
+    """
+    positions = [p for p in (header.find(" - "), header.find(" — ")) if p != -1]
+    if not positions:
+        return header.strip(), ""
+    idx = min(positions)
+    return header[:idx].strip(), header[idx + 3 :].strip()
+
+
 def parse_entries(content: str) -> list[DiaryEntry]:
     """
     Parsa le entry dalla sezione "Cosa ho fatto ieri".
@@ -232,12 +246,8 @@ def parse_entries(content: str) -> list[DiaryEntry]:
         lines = part.split("\n")
         header = lines[0][4:].strip()  # Rimuovi "### "
 
-        # Parsa header: "{Progetto} - {Descrizione}"
-        if " - " in header:
-            progetto, descrizione = header.split(" - ", 1)
-        else:
-            progetto = header
-            descrizione = ""
+        # Parsa header: "{Progetto} - {Descrizione}" (accetta anche em-dash)
+        progetto, descrizione = _split_heading(header)
 
         # Controlla se è una sezione speciale
         # Rimuovi versioni tra parentesi per il check (es. "Deploy (v1.2.3)" -> "Deploy")
