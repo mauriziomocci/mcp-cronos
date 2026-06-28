@@ -333,6 +333,40 @@ Returns the last 90 days of diary activity: how many entries were logged per pro
 
 ---
 
+#### `cronos_riferimento`
+
+Reconstruct the thread of a reference (ticket, MR, or repo) across the diary: every entry that mentions it, in chronological order, tagged with its canonical project, plus the projects and systems the reference spans. Read-only, capped output.
+
+Use this tool when you want to answer "everything that touches PROJ-123", "the thread of MR !456", "where did I work on the Backend API repo", or "trace PROJ-123".
+
+**Required parameters:**
+- `riferimento` (string): Ticket / MR / repo / string to trace (e.g. `"PROJ-123"`, `"Backend API"`)
+
+**Optional parameters:**
+- `data_inizio` (string): Range start `YYYY-MM-DD`
+- `data_fine` (string): Range end `YYYY-MM-DD`
+- `ultimi_giorni` (integer): Days to analyse when no dates are specified (default: 180)
+- `max_voci` (integer): Maximum number of timeline entries returned (default: 50)
+
+**Returns:**
+- `progetti` (list): canonical project names that mention the reference
+- `sistemi` (list): system names that mention the reference (via project registry roll-up)
+- `timeline` (list): chronological diary entries, capped to `max_voci`; each item has `data`, `progetto`, `titolo`, `snippet`
+- `num_voci` (int): total number of matches found before capping
+- `num_giorni` (int): number of distinct days with at least one match
+- `prima_data` / `ultima_data` (string or null): first and last date of a match
+- `troncato` (bool): true when the timeline was truncated at `max_voci`
+
+**Example:**
+
+```python
+Tool(name="cronos_riferimento", arguments={"riferimento": "PROJ-123", "ultimi_giorni": 180})
+```
+
+Returns the last 180 days of diary entries that mention `PROJ-123`, grouped by canonical project, with the list of projects and systems involved and a per-entry snippet showing the matching context.
+
+---
+
 #### `cronos_cerca`
 
 Full-text search across diary sources (raw entries, todo files, end-of-day files). Case-insensitive, with regex support.
@@ -829,6 +863,40 @@ Tool(name="cronos_statistiche", arguments={"ultimi_giorni": 90})
 ```
 
 Restituisce gli ultimi 90 giorni di attivita' del diario: quante entry per progetto e per sistema, la quota percentuale di ciascun sistema sul totale e il trend mensile delle voci. Con un registry configurato (es. `api-gateway` e `billing` entrambi sotto il sistema `"Platform"`), il roll-up `per_sistema` mostra il peso complessivo di `Platform` come singola riga con la relativa `quota_pct`.
+
+---
+
+#### `cronos_riferimento`
+
+Ricostruisce il filo di un riferimento (ticket, MR o repo) nel diario: ogni entry che lo menziona, in ordine cronologico, con il progetto canonico, piu' i progetti e i sistemi coinvolti. Read-only, con output limitato per mantenere le risposte concise.
+
+Usare questo tool quando si vuole rispondere a "tutto cio' che tocca PROJ-123", "il filo della MR !456", "dove ho lavorato sul repo Backend API" o "traccia PROJ-123".
+
+**Parametri obbligatori:**
+- `riferimento` (string): Ticket / MR / repo / stringa da tracciare (es. `"PROJ-123"`, `"Backend API"`)
+
+**Parametri opzionali:**
+- `data_inizio` (string): Inizio range `YYYY-MM-DD`
+- `data_fine` (string): Fine range `YYYY-MM-DD`
+- `ultimi_giorni` (integer): Giorni da analizzare se le date non sono specificate (predefinito: 180)
+- `max_voci` (integer): Numero massimo di voci nella timeline (predefinito: 50)
+
+**Restituisce:**
+- `progetti` (list): nomi dei progetti canonici che menzionano il riferimento
+- `sistemi` (list): nomi dei sistemi che menzionano il riferimento (tramite roll-up del registry)
+- `timeline` (list): entry del diario in ordine cronologico, troncate a `max_voci`; ogni voce ha `data`, `progetto`, `titolo`, `snippet`
+- `num_voci` (int): numero totale di match trovati prima del troncamento
+- `num_giorni` (int): numero di giorni distinti con almeno un match
+- `prima_data` / `ultima_data` (string o null): prima e ultima data di un match
+- `troncato` (bool): true quando la timeline e' stata troncata a `max_voci`
+
+**Esempio:**
+
+```python
+Tool(name="cronos_riferimento", arguments={"riferimento": "PROJ-123", "ultimi_giorni": 180})
+```
+
+Restituisce gli ultimi 180 giorni di entry del diario che menzionano `PROJ-123`, raggruppate per progetto canonico, con la lista dei progetti e dei sistemi coinvolti e uno snippet per voce che mostra il contesto del match.
 
 ---
 
