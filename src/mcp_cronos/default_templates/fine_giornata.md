@@ -71,7 +71,7 @@ qual e' stato l'esito. Niente dettagli implementativi qui. Deve servire al
 "me di domani mattina" per ricordare in 5 secondi di cosa si e' occupato.
 
 Esempio:
-"Giornata sul cleanup oauth2 dei microservizi ATPSS in produzione. Pulizia
+"Giornata sul cleanup oauth2 dei microservizi ACME in produzione. Pulizia
 massiva di 3.5M righe sui 4 servizi non bloccati, infrastruttura cleartokens
 predisposta su tutti e 5 ma ancora suspended. worker-service resta bloccato sul
 PVC saturo, decisione resize rimandata."
@@ -85,7 +85,7 @@ Esempio:
 - 3.461.823 righe oauth2 cancellate su 4 microservizi
 - 5 immagini Docker buildate e deployate
 - 2 cron VACUUM riusciti, 3 falliti per env mancanti, tutti fixati
-- 12 GiB usati su 15 del PVC db-lowq worker-service (saturazione 80%)
+- 12 GiB usati su 15 del PVC db-data worker-service (saturazione 80%)
 
 === SEZIONE: Decisioni prese ===
 
@@ -103,8 +103,8 @@ Cose lasciate a meta', task non ancora iniziati ma decisi, attese su altri.
 Una riga ciascuna. Indica cosa serve per chiuderli.
 
 Esempio:
-- Resize PVC db-lowq worker-service 15->25 GiB (attesa autorizzazione utente)
-- Risposta Domenico su REFRESH_TOKEN_EXPIRE_SECONDS (proposto 30/60 giorni)
+- Resize PVC db-data worker-service 15->25 GiB (attesa autorizzazione utente)
+- Risposta del collega su REFRESH_TOKEN_EXPIRE_SECONDS (proposto 30/60 giorni)
 - Unsuspend dei 4 cron cleartokens dopo il weekend
 - VACUUM FULL automatico del 04/05: worker-service fallira' di nuovo se PVC non resized
 
@@ -119,8 +119,8 @@ Stile pratico, copia-incollabile dove possibile.
 Esempio:
 "Domani mattina, prima di tutto verificare l'esito del VACUUM notturno:
 ```
-kubectl get jobs -n prod-teseoapp-atpss -l k8s-role=cron --sort-by=.metadata.creationTimestamp
-kubectl get pods -n prod-teseoapp-atpss --field-selector status.phase=Failed
+kubectl get jobs -n prod-acme-svc -l k8s-role=cron --sort-by=.metadata.creationTimestamp
+kubectl get pods -n prod-acme-svc --field-selector status.phase=Failed
 ```
 Se worker-service e' di nuovo ENOSPC: aprire la conversazione PVC resize.
 Altrimenti procedere con la sequenza unsuspend cron cleartokens."
@@ -144,7 +144,7 @@ Regole:
 
 Esempio (estratto da uno standup reale):
 "Ieri ho dedicato tutta la giornata al cleanup oauth2 dei microservizi
-ATPSS in produzione. La mattina sono partito guardando i log dei vacuum
+ACME in produzione. La mattina sono partito guardando i log dei vacuum
 notturni per capire perche' tre cron su cinque erano falliti, ho trovato
 che mancavano delle env nei manifest e li ho sistemati. Poi ho fatto la
 pulizia incrementale anno per anno sui quattro servizi che funzionavano,
