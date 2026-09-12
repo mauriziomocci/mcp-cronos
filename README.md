@@ -215,24 +215,25 @@ If a previous [`cronos_prepara_domani`](#cronos_prepara_domani) run backed up an
 
 The end-of-day is a deliberate two-phase flow. `cronos_fine_giornata` reads the raw entries and returns generation instructions; the AI assistant then drafts the structured content; finally `cronos_scrivi_fine_giornata` persists it to disk. Keep the two calls separate — do not merge them into one step.
 
-**Phase 1 — trigger the end-of-day workflow.** Call [`cronos_fine_giornata`](#cronos_fine_giornata) to get the raw diary and the instructions for generating the four structured outputs (rewritten entries, day summary, technical summary, standup message):
+**Phase 1 — trigger the end-of-day workflow.** Call [`cronos_fine_giornata`](#cronos_fine_giornata) to get the raw diary and the instructions for generating the closure content (summary, key numbers, decisions, open points, resume checkpoint, standup speech, likely Q&A) and, mandatorily, the `standup.md` narrative:
 
 ```python
 Tool(name="cronos_fine_giornata", arguments={})
 ```
 
-Follow the returned instructions to draft the content. You are editing the narrative here, not writing to disk yet.
+Follow the returned instructions to draft both contents. You are editing the narrative here, not writing to disk yet.
 
-**Phase 2 — persist the generated file.** Once the content is ready, call [`cronos_scrivi_fine_giornata`](#cronos_scrivi_fine_giornata) to write `fine-giornata.md`. Optionally pass a todo draft for the next day in the same call to skip a separate [`cronos_prepara_domani`](#cronos_prepara_domani) step:
+**Phase 2 — persist the generated files.** Once the content is ready, call [`cronos_scrivi_fine_giornata`](#cronos_scrivi_fine_giornata) to write `fine-giornata.md` and, in the same call, `standup.md` — a high-level narrative meant to be read aloud at standup. Optionally pass a todo draft for the next day in the same call to skip a separate [`cronos_prepara_domani`](#cronos_prepara_domani) step:
 
 ```python
 Tool(name="cronos_scrivi_fine_giornata", arguments={
     "contenuto": "... full markdown content ...",
+    "contenuto_standup": "... standup.md narrative ...",
     "contenuto_todo": "## Tomorrow\n- Review Beta API spec\n- ABC-124 implementation"
 })
 ```
 
-When `contenuto_todo` is provided, the next working day's `todo.md` and `raw.md` skeleton are created automatically.
+`contenuto_standup` is expected at every closure: when it is left out or blank, the result carries a `standup.avviso` warning instead of silently skipping the file. When `contenuto_todo` is provided, the next working day's `todo.md` and `raw.md` skeleton are created automatically.
 
 **Prepare the next day separately.** If you prefer to plan tomorrow as a dedicated step (for example, after a standup where priorities shifted), call [`cronos_prepara_domani`](#cronos_prepara_domani) on its own:
 
@@ -433,12 +434,12 @@ Generate a narrative, high-level standup summary. The tool returns the raw diary
 
 #### `cronos_fine_giornata`
 
-End-of-day workflow trigger. Reads the day's raw entries and returns detailed instructions for generating four structured outputs: rewritten entries, a day summary, a technical summary, and a standup message.
+End-of-day workflow trigger. Reads the day's raw entries and returns detailed instructions for generating the slim closure content for `fine-giornata.md` and, mandatorily, the `standup.md` narrative — a high-level story meant to be read aloud at standup, with the exact files/classes/functions/endpoints kept in a separate "where to look" line so the prose itself stays free of identifiers.
 
 **Optional parameters:**
 - `data` (string): Date `YYYY-MM-DD` (default: today)
 
-**Returns:** Raw diary entries with generation instructions.
+**Returns:** Raw diary entries with generation instructions for both `fine-giornata.md` and `standup.md`.
 
 ---
 
@@ -689,8 +690,9 @@ Write the end-of-day file with the fully generated content. Use this tool after 
 **Optional parameters:**
 - `data` (string): Date `YYYY-MM-DD` (default: today)
 - `contenuto_todo` (string): If provided, prepares the next working day's folder with this todo.md after writing (optional)
+- `contenuto_standup` (string): Markdown content for `standup.md`, expected at every closure. Written next to `fine-giornata.md` in the day folder. If omitted or blank, the result reports a warning instead of writing the file (optional)
 
-**Returns:** Confirmation with the written file path. When `contenuto_todo` is given, the result also includes a `prepara_domani` section with the paths of the next day's `todo.md` and `raw.md`.
+**Returns:** Confirmation with the written file path and a `standup` section (`{"scritto": true, "file": "..."}` or `{"scritto": false, "avviso": "..."}`). When `contenuto_todo` is given, the result also includes a `prepara_domani` section with the paths of the next day's `todo.md` and `raw.md`.
 
 ---
 
@@ -751,6 +753,7 @@ Diary/
         └── {year}-{month}-{day}/          (current per-day folder)
             ├── raw.md            progressive daily log
             ├── fine-giornata.md  end-of-day closure
+            ├── standup.md        high-level narrative read aloud at standup
             └── todo.md           day's to-do list
 ```
 
@@ -1005,24 +1008,25 @@ Se una precedente esecuzione di [`cronos_prepara_domani`](#cronos_prepara_domani
 
 La chiusura e' deliberatamente un flusso in due fasi. `cronos_fine_giornata` legge le entry grezze e restituisce le istruzioni di generazione; l'assistente AI redige poi il contenuto strutturato; infine `cronos_scrivi_fine_giornata` lo persiste su disco. Tieni le due chiamate separate — non unirle in un unico passo.
 
-**Fase 1 — avvia il workflow di fine giornata.** Chiama [`cronos_fine_giornata`](#cronos_fine_giornata) per ricevere il diario grezzo e le istruzioni per generare i quattro output strutturati (entry riscritte, riassunto della giornata, riassunto tecnico, messaggio standup):
+**Fase 1 — avvia il workflow di fine giornata.** Chiama [`cronos_fine_giornata`](#cronos_fine_giornata) per ricevere il diario grezzo e le istruzioni per generare il contenuto della chiusura (riassunto, numeri salienti, decisioni, punti aperti, checkpoint di ripresa, discorso per lo standup, domande probabili) e, obbligatoriamente, la narrazione di `standup.md`:
 
 ```python
 Tool(name="cronos_fine_giornata", arguments={})
 ```
 
-Segui le istruzioni restituite per redigere il contenuto. In questa fase stai costruendo la narrativa, non stai ancora scrivendo su disco.
+Segui le istruzioni restituite per redigere entrambi i contenuti. In questa fase stai costruendo la narrativa, non stai ancora scrivendo su disco.
 
-**Fase 2 — persisti il file generato.** Quando il contenuto e' pronto, chiama [`cronos_scrivi_fine_giornata`](#cronos_scrivi_fine_giornata) per scrivere `fine-giornata.md`. Opzionalmente passa una bozza di todo per il giorno successivo nella stessa chiamata, evitando un passo separato con [`cronos_prepara_domani`](#cronos_prepara_domani):
+**Fase 2 — persisti i file generati.** Quando il contenuto e' pronto, chiama [`cronos_scrivi_fine_giornata`](#cronos_scrivi_fine_giornata) per scrivere `fine-giornata.md` e, nella stessa chiamata, `standup.md` — una narrazione ad alto livello pensata per essere letta a voce allo standup. Opzionalmente passa una bozza di todo per il giorno successivo nella stessa chiamata, evitando un passo separato con [`cronos_prepara_domani`](#cronos_prepara_domani):
 
 ```python
 Tool(name="cronos_scrivi_fine_giornata", arguments={
     "contenuto": "... contenuto markdown completo ...",
+    "contenuto_standup": "... narrazione di standup.md ...",
     "contenuto_todo": "## Domani\n- Revisionare spec API Beta\n- Implementazione ABC-124"
 })
 ```
 
-Quando `contenuto_todo` e' fornito, `todo.md` e lo scheletro `raw.md` del prossimo giorno lavorativo vengono creati automaticamente.
+`contenuto_standup` e' atteso a ogni chiusura: se omesso o vuoto, il risultato riporta un avviso `standup.avviso` invece di scrivere silenziosamente senza il file. Quando `contenuto_todo` e' fornito, `todo.md` e lo scheletro `raw.md` del prossimo giorno lavorativo vengono creati automaticamente.
 
 **Prepara il giorno dopo separatamente.** Se preferisci pianificare il domani come passo dedicato (per esempio dopo uno standup in cui le priorita' sono cambiate), chiama [`cronos_prepara_domani`](#cronos_prepara_domani) da solo:
 
@@ -1223,12 +1227,12 @@ Genera un riassunto discorsivo ad alto livello per lo standup. Il tool restituis
 
 #### `cronos_fine_giornata`
 
-Avvia il workflow di fine giornata. Legge le entry grezze del giorno e restituisce istruzioni dettagliate per generare quattro output strutturati: entry riscritte, riassunto della giornata, riassunto tecnico e messaggio per lo standup.
+Avvia il workflow di fine giornata. Legge le entry grezze del giorno e restituisce istruzioni dettagliate per generare il contenuto snello di `fine-giornata.md` e, obbligatoriamente, la narrazione di `standup.md` — una storia ad alto livello pensata per essere letta a voce allo standup, con i file/classi/funzioni/endpoint esatti tenuti in una riga separata "dove guardare" cosi' la prosa resta libera da identificativi.
 
 **Parametri opzionali:**
 - `data` (string): Data `YYYY-MM-DD` (predefinito: oggi)
 
-**Restituisce:** Entry grezze del diario con istruzioni di generazione.
+**Restituisce:** Entry grezze del diario con istruzioni di generazione sia per `fine-giornata.md` sia per `standup.md`.
 
 ---
 
@@ -1479,8 +1483,9 @@ Scrive il file di fine giornata con il contenuto generato. Usare questo tool DOP
 **Parametri opzionali:**
 - `data` (string): Data `YYYY-MM-DD` (predefinito: oggi)
 - `contenuto_todo` (string): Se fornito, dopo la scrittura prepara la cartella del prossimo giorno lavorativo con questo todo.md (opzionale)
+- `contenuto_standup` (string): Contenuto markdown di `standup.md`, atteso a ogni chiusura. Scritto nella stessa cartella giornaliera di `fine-giornata.md`. Se omesso o vuoto, il risultato riporta un avviso invece di scrivere il file (opzionale)
 
-**Restituisce:** Conferma con path del file scritto. Quando `contenuto_todo` e' fornito, il risultato include anche una sezione `prepara_domani` con i path di `todo.md` e `raw.md` del giorno successivo.
+**Restituisce:** Conferma con path del file scritto e una sezione `standup` (`{"scritto": true, "file": "..."}` oppure `{"scritto": false, "avviso": "..."}`). Quando `contenuto_todo` e' fornito, il risultato include anche una sezione `prepara_domani` con i path di `todo.md` e `raw.md` del giorno successivo.
 
 ---
 

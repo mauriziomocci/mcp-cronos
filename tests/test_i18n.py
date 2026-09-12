@@ -19,6 +19,10 @@ REQUIRED_SECTION_KEYS = {
     "standup_message",
     "references",
     "requested_by",
+    "standup_yesterday",
+    "standup_today",
+    "standup_remaining",
+    "standup_where",
 }
 REQUIRED_TEMPORAL_KEYS = {"yesterday", "day_before", "last_weekday", "from_to"}
 
@@ -123,6 +127,10 @@ class TestItalianPack:
         assert self.pack.sections["standup_message"] == "Messaggio per lo standup"
         assert self.pack.sections["references"] == "Riferimenti"
         assert self.pack.sections["requested_by"] == "Richiesto da"
+        assert self.pack.sections["standup_yesterday"] == "Ieri"
+        assert self.pack.sections["standup_today"] == "Oggi"
+        assert self.pack.sections["standup_remaining"] == "Cosa manca"
+        assert self.pack.sections["standup_where"] == "Dove guardare"
 
     def test_blockers_default(self):
         assert self.pack.blockers_default == "Nessuno"
@@ -209,6 +217,10 @@ class TestEnglishPack:
         assert self.pack.sections["standup_message"] == "Standup message"
         assert self.pack.sections["references"] == "References"
         assert self.pack.sections["requested_by"] == "Requested by"
+        assert self.pack.sections["standup_yesterday"] == "Yesterday"
+        assert self.pack.sections["standup_today"] == "Today"
+        assert self.pack.sections["standup_remaining"] == "What is left"
+        assert self.pack.sections["standup_where"] == "Where to look"
 
     def test_blockers_default(self):
         assert self.pack.blockers_default == "None"

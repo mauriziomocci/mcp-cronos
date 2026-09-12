@@ -226,6 +226,21 @@ def get_todo_path(file_date: date, diario_path: Optional[Path] = None) -> Path:
     return get_day_folder_path(file_date, diario_path) / "todo.md"
 
 
+def get_standup_path(file_date: date, diario_path: Optional[Path] = None) -> Path:
+    """
+    Path of the `standup.md` file in the per-day folder layout (standup narrative).
+
+    Like `todo.md` (see get_todo_path) it only exists in the per-day folder
+    layout: legacy single-file days never had a separate standup file, and
+    placing it inside the legacy file would clash with the raw entries merged
+    there. For a legacy date the day folder is used anyway (created when
+    missing) as the only sensible location.
+
+    Example: /path/to/Diario/2026/05/2026-05-04/standup.md
+    """
+    return get_day_folder_path(file_date, diario_path) / "standup.md"
+
+
 def has_legacy_file(file_date: date, diario_path: Optional[Path] = None) -> bool:
     """True se per la data esiste il file legacy single-file."""
     return get_legacy_file_path(file_date, diario_path).exists()

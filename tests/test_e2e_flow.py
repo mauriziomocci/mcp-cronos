@@ -101,7 +101,7 @@ def test_full_two_day_cycle(tmp_diario, config_toml_it):
         assert "errore" not in r
         assert r["num_entries"] == 2
 
-        # 4) Write closure (slim)
+        # 4) Write closure (slim) together with the mandatory standup.md content
         chiusura = (
             "# Per lo Stand-up - 5 Maggio 2026\n\n"
             "## Riassunto\n\nGiornata su ATPSS e refactor cronos.\n\n"
@@ -111,9 +111,21 @@ def test_full_two_day_cycle(tmp_diario, config_toml_it):
             "**D: rischi su ATPSS?**\nR: Nessuno immediato.\n\n"
             "## Bloccanti\n\nAttesa autorizzazione resize PVC\n"
         )
-        r = scrivi_fine_giornata(contenuto=chiusura)
+        standup = (
+            "# Per lo Stand-up - 5 Maggio 2026\n\n"
+            "**Ieri.** Ho sospeso il cron di manutenzione su ATPSS e "
+            "proseguito il refactor del layout cartelle di Cronos.\n\n"
+            "Dove guardare: appmanager, mcp_cronos/tools/prepara_domani.py\n\n"
+            "**Oggi.** Verifico l'esito della manutenzione notturna su ATPSS.\n\n"
+            "Dove guardare: appmanager\n\n"
+            "**Cosa manca.** Resta da decidere il resize del volume dati.\n\n"
+            "Dove guardare: pianificato\n"
+        )
+        r = scrivi_fine_giornata(contenuto=chiusura, contenuto_standup=standup)
         assert r["successo"] is True
         assert Path(r["file"]) == folder1 / "fine-giornata.md"
+        assert r["standup"] == {"scritto": True, "file": str(folder1 / "standup.md")}
+        assert (folder1 / "standup.md").read_text(encoding="utf-8") == standup
         # Raw must be untouched
         assert "ATPSS - Suspend appmanager" in (folder1 / "raw.md").read_text(encoding="utf-8")
 

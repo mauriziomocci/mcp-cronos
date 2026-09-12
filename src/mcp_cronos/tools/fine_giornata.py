@@ -1,13 +1,14 @@
 """
 Tool for end-of-day diary closure.
 
-Reads the raw entries for the day and returns instructions for:
-1. Rewriting them in chronological/logical order
-2. Generating a day summary
-3. Generating a technical summary
-4. Generating a standup message
+Reads the raw entries for the day and returns style instructions for generating
+the slim closure content (see default_templates/fine_giornata.md for the full
+section list: summary, key numbers, decisions, open points, resume checkpoint,
+standup speech, likely Q&A) and, mandatorily, the standup.md narrative that
+gets read aloud at the next day's standup.
 
-The LLM generates the four outputs and writes the complete file directly.
+The LLM drafts both contents and writes them in a single call to
+cronos_scrivi_fine_giornata (contenuto and contenuto_standup).
 """
 
 from typing import Optional
@@ -33,6 +34,10 @@ def _get_style_instructions() -> str:
         "{section_day_summary}": config.section_day_summary,
         "{section_tech_summary}": config.section_tech_summary,
         "{section_standup_message}": config.section_standup_message,
+        "{section_standup_yesterday}": config.section_standup_yesterday,
+        "{section_standup_today}": config.section_standup_today,
+        "{section_standup_remaining}": config.section_standup_remaining,
+        "{section_standup_where}": config.section_standup_where,
     }
     result = template
     for placeholder, value in replacements.items():

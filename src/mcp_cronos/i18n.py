@@ -34,7 +34,8 @@ class LanguagePack:
     temporal: dict[str, str]  # relative-time expressions; required keys below
 
     # sections keys: entries, blockers, day_summary, tech_summary,
-    #                standup_message, references, requested_by
+    #                standup_message, references, requested_by,
+    #                standup_yesterday, standup_today, standup_remaining, standup_where
     # temporal keys: yesterday, day_before, last_weekday, from_to
 
     def format_date(self, d: date) -> str:
@@ -88,6 +89,10 @@ _IT = LanguagePack(
         "standup_message": "Messaggio per lo standup",
         "references": "Riferimenti",
         "requested_by": "Richiesto da",
+        "standup_yesterday": "Ieri",
+        "standup_today": "Oggi",
+        "standup_remaining": "Cosa manca",
+        "standup_where": "Dove guardare",
     },
     blockers_default="Nessuno",
     temporal={
@@ -129,6 +134,10 @@ _EN = LanguagePack(
         "standup_message": "Standup message",
         "references": "References",
         "requested_by": "Requested by",
+        "standup_yesterday": "Yesterday",
+        "standup_today": "Today",
+        "standup_remaining": "What is left",
+        "standup_where": "Where to look",
     },
     blockers_default="None",
     temporal={

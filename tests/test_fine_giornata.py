@@ -66,3 +66,32 @@ def test_template_uses_config_sections(sample_diary_it):
     instructions = result["istruzioni"]
     # Default Italian config sections should appear in the template
     assert "Bloccanti" in instructions
+
+
+def test_instructions_resolve_standup_sections_italian(sample_diary_it):
+    """The standup.md section placeholders resolve to the Italian labels by default."""
+    with _patch_today(date(2026, 4, 9)):
+        result = fine_giornata()
+
+    instructions = result["istruzioni"]
+    assert "**Ieri.**" in instructions
+    assert "**Oggi.**" in instructions
+    assert "**Cosa manca.**" in instructions
+    assert "Dove guardare:" in instructions
+    # No raw placeholder should survive substitution
+    assert "{section_standup_yesterday}" not in instructions
+    assert "{section_standup_today}" not in instructions
+    assert "{section_standup_remaining}" not in instructions
+    assert "{section_standup_where}" not in instructions
+
+
+def test_instructions_resolve_standup_sections_english(sample_diary_en, config_toml_en):
+    """The standup.md section placeholders resolve to the English labels when lang='en'."""
+    with _patch_today(date(2026, 4, 9)):
+        result = fine_giornata()
+
+    instructions = result["istruzioni"]
+    assert "**Yesterday.**" in instructions
+    assert "**Today.**" in instructions
+    assert "**What is left.**" in instructions
+    assert "Where to look:" in instructions
