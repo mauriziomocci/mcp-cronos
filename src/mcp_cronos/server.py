@@ -212,16 +212,21 @@ Usa questo tool quando l'utente dice:
 - "Fai il wrap-up della giornata"
 
 Il tool restituisce le entry grezze del giorno insieme a istruzioni dettagliate
-per generare quattro output:
-1. Entry riscritte in ordine cronologico e logico
-2. Riassunto della giornata (paragrafo narrativo)
-3. Riassunto tecnico (denso, con tutti i dettagli implementativi)
-4. Messaggio per lo standup (alto livello, discorsivo)
+per generare:
+1. Il contenuto snello del file di chiusura fine-giornata.md (riassunto,
+   numeri salienti, decisioni, punti aperti, checkpoint di ripresa, discorso
+   per lo standup, domande probabili)
+2. Il contenuto del file standup.md, la narrazione ad alto livello letta a
+   voce allo standup (obbligatorio a ogni chiusura, MAI opzionale)
+
+Entrambi vanno passati nella STESSA chiamata a cronos_scrivi_fine_giornata
+(parametri contenuto e contenuto_standup).
 
 Parametri:
 - data (str, optional): Data YYYY-MM-DD (default: oggi)
 
-Restituisce: Entry del diario con istruzioni di stile per la generazione.""",
+Restituisce: Entry del diario con istruzioni di stile per la generazione di
+fine-giornata.md e di standup.md.""",
         inputSchema={
             "type": "object",
             "properties": {
@@ -441,9 +446,15 @@ Parametri:
   cartella del prossimo giorno lavorativo con questo todo.md, richiamando
   cronos_prepara_domani internamente. Il risultato viene restituito sotto
   la chiave 'prepara_domani'.
+- contenuto_standup (str, optional ma atteso a OGNI chiusura): contenuto
+  markdown di standup.md, la narrazione ad alto livello per lo standup.
+  Scritto nella stessa cartella giornaliera di fine-giornata.md. Il
+  risultato viene restituito sotto la chiave 'standup'; se omesso o vuoto,
+  'standup' riporta un avviso invece di scrivere il file.
 
-Restituisce: Conferma con path del file scritto, ed eventuale risultato di
-prepara_domani se contenuto_todo e' stato fornito.""",
+Restituisce: Conferma con path del file scritto, esito della scrittura di
+standup.md sotto 'standup', ed eventuale risultato di prepara_domani se
+contenuto_todo e' stato fornito.""",
         inputSchema={
             "type": "object",
             "properties": {
@@ -457,6 +468,14 @@ prepara_domani se contenuto_todo e' stato fornito.""",
                     "description": (
                         "Se fornito, dopo la scrittura prepara la cartella del prossimo "
                         "giorno lavorativo con questo todo.md (opzionale)"
+                    ),
+                },
+                "contenuto_standup": {
+                    "type": "string",
+                    "description": (
+                        "Contenuto markdown di standup.md, atteso a ogni chiusura di "
+                        "giornata. Se omesso o vuoto, il risultato riporta un avviso "
+                        "invece di scrivere il file (opzionale)"
                     ),
                 },
             },
@@ -848,6 +867,7 @@ async def call_tool(name: str, arguments: dict):
                 contenuto=arguments["contenuto"],
                 data=arguments.get("data"),
                 contenuto_todo=arguments.get("contenuto_todo"),
+                contenuto_standup=arguments.get("contenuto_standup"),
             )
 
         elif name == "cronos_prepara_domani":

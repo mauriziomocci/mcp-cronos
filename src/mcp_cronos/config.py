@@ -78,6 +78,10 @@ class CronosConfig:
     section_standup_message: str
     section_references: str
     section_requested_by: str
+    section_standup_yesterday: str
+    section_standup_today: str
+    section_standup_remaining: str
+    section_standup_where: str
     calendar_country: str
     calendar_extra_holidays: list[str]
     blockers_default: str
@@ -205,6 +209,14 @@ def load_config() -> CronosConfig:
     section_standup_message = user_sections.get("standup_message", pack.sections["standup_message"])
     section_references = user_sections.get("references", pack.sections["references"])
     section_requested_by = user_sections.get("requested_by", pack.sections["requested_by"])
+    section_standup_yesterday = user_sections.get(
+        "standup_yesterday", pack.sections["standup_yesterday"]
+    )
+    section_standup_today = user_sections.get("standup_today", pack.sections["standup_today"])
+    section_standup_remaining = user_sections.get(
+        "standup_remaining", pack.sections["standup_remaining"]
+    )
+    section_standup_where = user_sections.get("standup_where", pack.sections["standup_where"])
 
     # Diary settings
     user_diary: dict[str, Any] = cronos_section.get("diary", {})
@@ -271,6 +283,10 @@ def load_config() -> CronosConfig:
         section_standup_message=section_standup_message,
         section_references=section_references,
         section_requested_by=section_requested_by,
+        section_standup_yesterday=section_standup_yesterday,
+        section_standup_today=section_standup_today,
+        section_standup_remaining=section_standup_remaining,
+        section_standup_where=section_standup_where,
         calendar_country=calendar_country,
         calendar_extra_holidays=calendar_extra_holidays,
         blockers_default=pack.blockers_default,

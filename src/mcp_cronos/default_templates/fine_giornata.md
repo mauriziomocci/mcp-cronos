@@ -156,6 +156,106 @@ il discorso worker-service: il volume e' saturo, il vacuum di stanotte
 fallira' di nuovo se non facciamo il resize del PVC, sto aspettando
 l'autorizzazione."
 
+=== FILE SEPARATO: standup.md ===
+
+Oltre al file di chiusura descritto sopra, a OGNI chiusura di giornata devi
+produrre ANCHE il contenuto del file `standup.md`: la narrazione ad alto
+livello che si legge a voce allo standup del giorno dopo. Genera questo
+contenuto insieme a tutto il resto e passalo come `contenuto_standup` alla
+STESSA chiamata di `cronos_scrivi_fine_giornata` che scrive la chiusura.
+Non e' un tool a parte e non e' una seconda chiamata.
+
+`standup.md` viene rigenerato per intero a ogni chiusura della stessa
+giornata: non e' un log che si accumula, e' sempre l'istantanea completa e
+aggiornata di dove sta il lavoro.
+
+STRUTTURA DEL FILE:
+
+```
+# {titolo_standup}
+
+**{section_standup_yesterday}.** {paragrafo narrativo}
+
+{section_standup_where}: {elenco identificativi}
+
+**{section_standup_today}.** {paragrafo narrativo}
+
+{section_standup_where}: {elenco identificativi}
+
+**{section_standup_remaining}.** {paragrafo narrativo}
+
+{section_standup_where}: {elenco identificativi}
+```
+
+Il titolo e' lo stesso titolo standup della chiusura sopra. Le tre
+etichette sono grassetto che apre il paragrafo, MAI intestazioni `##`: il
+file e' tre paragrafi discorsivi, non una lista di sezioni con titoli.
+
+REGOLE PER OGNI PARAGRAFO:
+
+- Alto livello: cosa e' stato costruito e perche' conta, il succo delle
+  funzionalita', non il dettaglio implementativo. Se compare un termine
+  tecnico non ovvio, traducilo in linguaggio comune la prima volta che lo
+  usi. Niente dettagli irrilevanti o inutilmente complessi.
+- Prima persona narrativa, stesso registro discorsivo del "Discorso per lo
+  standup" sopra: frasi che scorrono, non un verbale a punti.
+- Mai raccontare il processo di lavoro o gli strumenti usati per arrivarci
+  (niente "ho eseguito i test", "il tool mi ha segnalato", "dopo la
+  review"). Mai menzionare intelligenza artificiale, agenti, revisori
+  automatici o assistenti: il paragrafo descrive il lavoro svolto, non chi
+  o cosa lo ha svolto. Solo fatti presenti nelle entry grezze della
+  giornata: non inventare e non generalizzare oltre quello che e' scritto
+  li'.
+- Dopo ogni paragrafo sostanziale, UNA riga `{section_standup_where}: `
+  seguita dai file, classi, funzioni ed endpoint esatti da aprire se
+  qualcuno chiede di vedere il codice. E' l'UNICO punto del file dove
+  compaiono identificativi: il paragrafo sopra non deve contenere nomi di
+  file, hash di commit, ne' numeri di merge request o di ticket. Se il
+  blocco non tocca codice (e' puro allineamento, decisione o discussione),
+  ometti la riga.
+
+SEZIONE {section_standup_yesterday} — cosa ho fatto ieri, alto livello:
+riprende in prosa il lavoro della giornata appena chiusa, lo stesso
+materiale del "Discorso per lo standup" sopra ma piu' asciutto e senza
+sovrapposizione testuale: qui il succo, li' il flusso completo.
+
+Esempio:
+"Ieri ho completato il modulo di autenticazione degli utenti anonimi: ogni
+dispositivo riceve ora un token temporaneo rinnovabile senza bisogno di
+registrazione, il che toglie l'attrito principale al primo avvio
+dell'app."
+
+{section_standup_where}: modulo `auth/token.py`, funzione
+`genera_token_anonimo`, endpoint `POST /api/v1/auth/anonimo`.
+
+SEZIONE {section_standup_today} — cosa e' in corso o parte oggi, alto
+livello: il lavoro pianificato per la prossima giornata lavorativa, stesso
+registro — cosa consegnera' e perche' e' il passo successivo naturale.
+
+Esempio:
+"Oggi passo al rinnovo automatico del token: quando scade, il dispositivo
+lo deve rinnovare da solo in background, senza che l'utente se ne accorga
+o debba rifare l'accesso."
+
+{section_standup_where}: modulo `auth/refresh.py` (da creare), funzione
+`rinnova_token`.
+
+SEZIONE {section_standup_remaining} — cosa manca, le fasi ancora aperte
+della lavorazione: NON e' l'elenco puntato dei "Punti aperti" di sopra, e'
+la narrazione delle fasi rimanenti dell'intera funzionalita' o del
+progetto — cosa consegna ciascuna fase, in linguaggio comune, con la
+collocazione di codice prevista per ciascuna nella riga
+{section_standup_where}.
+
+Esempio:
+"Restano due fasi. La prima aggiunge la possibilita' di collegare un
+account anonimo a un account email quando l'utente decide di registrarsi
+davvero, senza perdere lo storico accumulato. La seconda mette un limite
+al numero di dispositivi anonimi per evitare abusi del token gratuito."
+
+{section_standup_where}: fase 1 in `auth/collega_account.py`
+(pianificato); fase 2 nel middleware `auth/rate_limit.py` (pianificato).
+
 === SEZIONE: Domande probabili e risposte pronte ===
 
 Anticipa le domande che potrebbero farmi allo standup e prepara le
@@ -196,8 +296,12 @@ inizia a degradare, ora siamo all'80%. Settimana prossima resize obbligato.
    verificare che suoni naturale
 5. Per le "Domande probabili" pensa alle domande sgradevoli, non solo
    quelle facili: cosa potrebbe contestare un tech lead?
-6. Chiama `cronos_scrivi_fine_giornata` con il contenuto generato
-7. Subito dopo la chiusura, prepara la cartella del prossimo giorno
+6. Genera ANCHE il contenuto di `standup.md` seguendo le regole della
+   sezione "FILE SEPARATO: standup.md" sopra — e' obbligatorio a ogni
+   chiusura, non opzionale
+7. Chiama `cronos_scrivi_fine_giornata` passando sia il contenuto della
+   chiusura sia `contenuto_standup`, nella STESSA chiamata
+8. Subito dopo la chiusura, prepara la cartella del prossimo giorno
    lavorativo con `cronos_prepara_domani`. Vedi sezione successiva.
 
 === PREPARAZIONE GIORNO SUCCESSIVO ===

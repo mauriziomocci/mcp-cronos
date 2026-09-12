@@ -151,6 +151,10 @@ def test_section_names_from_italian_language(config_toml_it: Path):
     assert config.section_day_summary == "Riassunto della giornata"
     assert config.section_tech_summary == "Riassunto tecnico"
     assert config.section_standup_message == "Messaggio per lo standup"
+    assert config.section_standup_yesterday == "Ieri"
+    assert config.section_standup_today == "Oggi"
+    assert config.section_standup_remaining == "Cosa manca"
+    assert config.section_standup_where == "Dove guardare"
 
 
 def test_section_names_from_english_language(config_toml_en: Path):
@@ -161,6 +165,26 @@ def test_section_names_from_english_language(config_toml_en: Path):
     assert config.section_day_summary == "Daily summary"
     assert config.section_tech_summary == "Technical summary"
     assert config.section_standup_message == "Standup message"
+    assert config.section_standup_yesterday == "Yesterday"
+    assert config.section_standup_today == "Today"
+    assert config.section_standup_remaining == "What is left"
+    assert config.section_standup_where == "Where to look"
+
+
+def test_section_override_standup_sections(tmp_diario: Path):
+    """[cronos.sections] overrides apply to the new standup_* fields exactly like the others."""
+    config_file = tmp_diario / "cronos.toml"
+    config_file.write_text(
+        '[cronos]\nlang = "it"\n\n[cronos.sections]\n'
+        'standup_yesterday = "Fatto ieri"\nstandup_where = "Riferimenti codice"\n',
+        encoding="utf-8",
+    )
+    config = load_config()
+    assert config.section_standup_yesterday == "Fatto ieri"
+    assert config.section_standup_where == "Riferimenti codice"
+    # Untouched keys keep the language default
+    assert config.section_standup_today == "Oggi"
+    assert config.section_standup_remaining == "Cosa manca"
 
 
 # ---------------------------------------------------------------------------

@@ -88,8 +88,9 @@ src/mcp_cronos/
 
 **Diary file structure**: current per-day folder layout
 `{CRONOS_DIARIO_PATH}/{year}/{month}/{year}-{month}-{day}/` containing `raw.md`
-(progressive daily log), `fine-giornata.md` (end-of-day closure), and `todo.md`
-(day's to-do list). Legacy days use a single file
+(progressive daily log), `fine-giornata.md` (end-of-day closure), `standup.md`
+(high-level narrative read aloud at the standup, regenerated at every closure), and
+`todo.md` (day's to-do list). Legacy days use a single file
 `{CRONOS_DIARIO_PATH}/{year}/{month}/{year}-{month}-{day}.md` and are kept as-is
 (no migration).
 
@@ -195,10 +196,10 @@ The title uses the next day's date (standup convention). Months and section name
 The end-of-day process is a two-step tool workflow:
 
 1. `cronos_fine_giornata` reads raw entries and returns them with detailed style instructions
-2. The LLM generates the restructured content (5 sections: entries, daily summary, technical summary, standup message, blockers)
-3. `cronos_scrivi_fine_giornata` writes the generated content to the file
+2. The LLM generates the slim closure content for `fine-giornata.md` (summary, key numbers, decisions, open points, resume checkpoint, standup speech, likely Q&A, blockers) and, mandatorily, the `standup.md` narrative: three first-person paragraphs (yesterday, today, what is left) at a high level, each followed by a "where to look" line that is the only place carrying file, class, function and endpoint names; no process narration, no tools, no AI or agents
+3. `cronos_scrivi_fine_giornata` writes both files in a single call (`contenuto` and `contenuto_standup`); when `contenuto_standup` is missing or blank the result carries a `standup.avviso` warning instead of silently skipping the file
 
-After writing the end-of-day file, commit and push the diary changes.
+After writing the end-of-day files, commit and push the diary changes.
 
 4. Optionally call `cronos_prepara_domani` to create the next working day's
    folder with a `todo.md` and an empty `raw.md` skeleton, carrying over open

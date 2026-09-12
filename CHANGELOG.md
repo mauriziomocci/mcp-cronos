@@ -7,6 +7,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.7.0] - 2026-09-12
+
+### Added
+
+- The end-of-day closure now produces a second file, `standup.md`, in the day
+  folder: a high-level first-person narrative meant to be read aloud at the
+  standup, in three paragraphs (yesterday, today, what is left), each followed
+  by a "where to look" line that is the only place carrying file, class,
+  function and endpoint names. The prose itself stays free of identifiers,
+  process narration, tools and any mention of AI or agents, and the file is
+  regenerated in full at every closure of the same day.
+- `cronos_scrivi_fine_giornata` accepts `contenuto_standup` and writes
+  `standup.md` next to `fine-giornata.md` in the same call (and the same diary
+  commit); the result carries a `standup` block with the written path, or an
+  `avviso` warning when the content is missing or blank, so a closure without
+  the standup file is never silent.
+- `cronos_fine_giornata` instructions describe the `standup.md` structure and
+  rules and make it mandatory at every closure; new language-aware section
+  labels `standup_yesterday`, `standup_today`, `standup_remaining` and
+  `standup_where` (Italian and English packs, overridable from
+  `[cronos.sections]`).
+
 ## [1.6.1] - 2026-06-28
 
 ### Added

@@ -78,6 +78,37 @@ def test_fine_giornata_contains_required_sections(section_marker: str):
 
 
 # ---------------------------------------------------------------------------
+# fine_giornata: mandatory standup.md section
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    "placeholder",
+    [
+        "{section_standup_yesterday}",
+        "{section_standup_today}",
+        "{section_standup_remaining}",
+        "{section_standup_where}",
+    ],
+)
+def test_fine_giornata_contains_standup_placeholders(placeholder: str):
+    """The closure template must carry every placeholder for the standup.md section."""
+    from mcp_cronos.template_loader import load_template
+
+    content = load_template("fine_giornata")
+    assert placeholder in content, f"Missing standup placeholder: {placeholder}"
+
+
+def test_fine_giornata_instructs_contenuto_standup_in_same_call():
+    """The template must tell the LLM to pass contenuto_standup in the same write call."""
+    from mcp_cronos.template_loader import load_template
+
+    content = load_template("fine_giornata")
+    assert "contenuto_standup" in content
+    assert "standup.md" in content
+
+
+# ---------------------------------------------------------------------------
 # User override
 # ---------------------------------------------------------------------------
 

@@ -272,3 +272,91 @@ def test_end_of_day_with_todo_commits_next_day_too(tmp_diario, monkeypatch):
     assert result["prepara_domani"]["successo"] is True
     # Next-day files prepared by prepara_domani must also be committed.
     assert _porcelain(tmp_diario) == ""
+
+
+# ---------------------------------------------------------------------------
+# standup.md: mandatory closure output next to fine-giornata.md
+# ---------------------------------------------------------------------------
+
+
+def test_scrivi_with_contenuto_standup_writes_file(tmp_diario, config_toml_it):
+    """contenuto_standup, when provided, is written to standup.md in the day folder."""
+    content = "# Closure\n\nSlim summary.\n"
+    standup_content = "# For Standup\n\n**Yesterday.** Did things.\n"
+    with _patch_today(date(2026, 5, 4)):
+        result = scrivi_fine_giornata(contenuto=content, contenuto_standup=standup_content)
+
+    expected_standup_path = tmp_diario / "2026" / "05" / "2026-05-04" / "standup.md"
+    assert result["standup"] == {"scritto": True, "file": str(expected_standup_path)}
+    assert expected_standup_path.read_text(encoding="utf-8") == standup_content
+    # It coexists with fine-giornata.md in the same day folder, without overwriting it.
+    expected_closure_path = tmp_diario / "2026" / "05" / "2026-05-04" / "fine-giornata.md"
+    assert expected_closure_path.read_text(encoding="utf-8") == content
+
+
+def test_scrivi_without_contenuto_standup_reports_warning(tmp_diario, config_toml_it):
+    """Omitting contenuto_standup reports a warning instead of silently skipping the file."""
+    with _patch_today(date(2026, 5, 4)):
+        result = scrivi_fine_giornata(contenuto="# Closure\n")
+
+    assert result["standup"]["scritto"] is False
+    assert "avviso" in result["standup"]
+    assert result["standup"]["avviso"]
+    standup_path = tmp_diario / "2026" / "05" / "2026-05-04" / "standup.md"
+    assert not standup_path.exists()
+
+
+def test_scrivi_blank_contenuto_standup_treated_as_missing(tmp_diario, config_toml_it):
+    """A blank/whitespace-only contenuto_standup is treated the same as omitting it."""
+    with _patch_today(date(2026, 5, 4)):
+        result = scrivi_fine_giornata(contenuto="# Closure\n", contenuto_standup="   \n")
+
+    assert result["standup"]["scritto"] is False
+    assert "avviso" in result["standup"]
+    standup_path = tmp_diario / "2026" / "05" / "2026-05-04" / "standup.md"
+    assert not standup_path.exists()
+
+
+def test_scrivi_standup_path_for_legacy_date_uses_day_folder(tmp_diario, config_toml_it):
+    """For a legacy single-file date, standup.md still lives in the (newly created) day folder.
+
+    standup.md has no legacy equivalent (mirrors todo.md, see get_todo_path): it cannot
+    share the legacy single file without clobbering the raw content merged into it.
+    """
+    legacy = tmp_diario / "2026" / "04" / "2026-04-09.md"
+    legacy.parent.mkdir(parents=True, exist_ok=True)
+    legacy.write_text("preexisting raw content", encoding="utf-8")
+
+    with _patch_today(date(2026, 4, 9)):
+        result = scrivi_fine_giornata(
+            contenuto="# Closure on legacy\n", contenuto_standup="# Standup\n\ncontent\n"
+        )
+
+    expected_standup_path = tmp_diario / "2026" / "04" / "2026-04-09" / "standup.md"
+    assert result["standup"] == {"scritto": True, "file": str(expected_standup_path)}
+    assert expected_standup_path.exists()
+    # The legacy file must remain untouched by the standup write.
+    assert legacy.read_text(encoding="utf-8") == "# Closure on legacy\n"
+
+
+def test_end_of_day_with_standup_commits_it_too(tmp_diario, monkeypatch):
+    """standup.md is staged and committed together with the rest of the day's closure."""
+    monkeypatch.setenv("GIT_AUTHOR_NAME", "t")
+    monkeypatch.setenv("GIT_AUTHOR_EMAIL", "t@t")
+    monkeypatch.setenv("GIT_COMMITTER_NAME", "t")
+    monkeypatch.setenv("GIT_COMMITTER_EMAIL", "t@t")
+    _init_diary_git_repo(tmp_diario)
+
+    from mcp_cronos.config import _reset_config
+    from mcp_cronos.tools.scrivi_fine_giornata import scrivi_fine_giornata
+
+    _reset_config()
+    result = scrivi_fine_giornata(
+        contenuto="# Chiusura\n",
+        data="2026-04-09",
+        contenuto_standup="# Standup\n\n**Ieri.** fatto.\n",
+    )
+
+    assert result["standup"]["scritto"] is True
+    assert result["git"]["git_commit"] == "ok"
+    assert _porcelain(tmp_diario) == ""
