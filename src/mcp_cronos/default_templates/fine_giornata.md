@@ -191,6 +191,46 @@ Il titolo e' lo stesso titolo standup della chiusura sopra. Le tre
 etichette sono grassetto che apre il paragrafo, MAI intestazioni `##`: il
 file e' tre paragrafi discorsivi, non una lista di sezioni con titoli.
 
+TONO E LUNGHEZZA (regola del 22/9/2026, che prevale sugli esempi piu' sotto):
+
+`standup.md` e' un messaggio breve e semplice a un collega di un altro
+reparto, come una nota su Slack: deve capirlo chi non ha mai aperto il
+codice.
+- Breve: ogni paragrafo poche frasi, il file intero si legge in un minuto.
+- Parole comuni. Niente gergo tecnico lasciato nudo: parole come
+  "consolidamento", "migration", "refactor", "schema", "vincolo",
+  "endpoint" non compaiono, al loro posto c'e' cosa fanno per le persone
+  ("ogni dato resta legato alla sua sperimentazione", "il questionario si
+  compila una volta per sperimentazione"). Se un termine non si traduce in
+  una frase, e' un dettaglio implementativo e non va nel paragrafo.
+- Racconta l'effetto per chi usa il prodotto, non il meccanismo: cosa
+  cambia per i partecipanti, per chi gestisce, per il cliente.
+- Una decisione da prendere insieme si dice in una frase, con il solo
+  numero che serve a decidere.
+
+ESEMPIO DI TONO PER standup.md (messaggio reale del 22/9/2026, da imitare;
+accenti veri perche' e' prosa da leggere):
+"Ieri ho finito la parte che lega ogni dato alla sua sperimentazione:
+obiettivi, premio e risposte al questionario sono ora separati per
+sperimentazione, così chi partecipa a due edizioni ha un percorso in
+ciascuna, il premio non si riscuote due volte nella stessa e il
+questionario si compila una volta per ogni sperimentazione. Ho anche
+trovato e corretto un bug: età minima, residenza ed email già usata non
+venivano controllate quando qualcuno chiedeva il premio. Dopo il rilascio
+torneranno attivi: sugli ambienti di collaudo 7 delle 8 sperimentazioni
+completate non risultano residenti, quindi decidiamo insieme se tenere
+acceso il controllo di residenza.
+
+Oggi lavoro sugli spostamenti: uno spostamento non deve mai essere metà di
+una sperimentazione e metà di un'altra, in nessuno dei modi in cui il
+server lo può costruire.
+
+Per finire restano: la pulizia del flusso che costruisce gli spostamenti,
+la scelta e l'adesione dall'app con le sue API, il tool di gestione con
+statistiche ed export per sperimentazione, la fine sperimentazione con
+notifiche e privacy, e la chiusura con documentazione e collaudo. Poi un
+rilascio unico sui due stage e, quando l'app sarà pronta, l'accensione."
+
 REGOLE PER OGNI PARAGRAFO:
 
 - Alto livello: cosa e' stato costruito e perche' conta, il succo delle

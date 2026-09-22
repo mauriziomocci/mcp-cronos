@@ -85,6 +85,18 @@ def test_instructions_resolve_standup_sections_italian(sample_diary_it):
     assert "{section_standup_where}" not in instructions
 
 
+def test_standup_instructions_ask_for_short_plain_language(sample_diary_it):
+    """standup.md must read like a short message to a colleague of another team:
+    plain words, no jargon left untranslated, and a real example to imitate."""
+    with _patch_today(date(2026, 4, 9)):
+        result = fine_giornata()
+
+    instructions = result["istruzioni"]
+    assert "ESEMPIO DI TONO PER standup.md" in instructions
+    assert "consolidamento" in instructions  # named as the jargon to avoid
+    assert "una sperimentazione e metà di un'altra" in instructions
+
+
 def test_instructions_resolve_standup_sections_english(sample_diary_en, config_toml_en):
     """The standup.md section placeholders resolve to the English labels when lang='en'."""
     with _patch_today(date(2026, 4, 9)):

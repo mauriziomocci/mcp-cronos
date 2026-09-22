@@ -8,6 +8,9 @@ REGOLE:
 - Continuità discorsiva assoluta: un flusso di frasi che scorrono l'una nell'altra,
   MAI elenchi puntati, MAI strutture rigide con grassetto per progetto
 - Alto livello — racconta cosa hai fatto e perché, non come
+- Breve e semplice, come una nota a un collega di un altro reparto: niente gergo
+  tecnico lasciato nudo ("consolidamento", "migration", "refactor", "schema"),
+  al suo posto cosa cambia per chi usa il prodotto (regola del 22/9/2026)
 - Niente dettagli implementativi (niente nomi file, classi, funzioni, MR, Jira)
 - Niente strumenti interni (MCP, tool CLI, script, automazioni)
 - Dettagli tecnici solo se servono a far capire il contesto o sono interessanti

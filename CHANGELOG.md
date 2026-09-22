@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- The end-of-day instructions for `standup.md` now ask for a short, plain
+  message a colleague of another team can follow: a few sentences per
+  paragraph, no technical jargon left untranslated (words like
+  "consolidamento", "migration", "refactor", "schema" are replaced by what
+  they change for the people using the product), the effect rather than the
+  mechanism, and a real message to imitate. The standup summary tool carries
+  the same rule.
+
 ## [1.7.0] - 2026-09-12
 
 ### Added
