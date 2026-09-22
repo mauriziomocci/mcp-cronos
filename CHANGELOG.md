@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.8.0] - 2026-09-22
+
 ### Changed
 
 - The end-of-day instructions for `standup.md` now ask for a short, plain
