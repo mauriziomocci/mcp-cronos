@@ -190,6 +190,9 @@ STRUTTURA DEL FILE:
 Il titolo e' lo stesso titolo standup della chiusura sopra. Le tre
 etichette sono grassetto che apre il paragrafo, MAI intestazioni `##`: il
 file e' tre paragrafi discorsivi, non una lista di sezioni con titoli.
+Unica eccezione, la sezione {section_standup_remaining}: quando la
+lavorazione ha piu' di una fase da finire, dopo il paragrafo di apertura
+ha un elenco numerato di fasi (regola del 03/11/2026, vedi sotto).
 
 TONO E LUNGHEZZA (regola del 22/9/2026, che prevale sugli esempi piu' sotto):
 
@@ -295,6 +298,33 @@ al numero di dispositivi anonimi per evitare abusi del token gratuito."
 
 {section_standup_where}: fase 1 in `auth/collega_account.py`
 (pianificato); fase 2 nel middleware `auth/rate_limit.py` (pianificato).
+
+REGOLA FISSA PER {section_standup_remaining} (utente, 03/11/2026, ogni
+progetto; prevale sull'esempio sopra quando le fasi sono piu' di una):
+questa sezione si spiega a voce allo standup e deve giustificare le date,
+quindi e' fatta cosi':
+1. Un paragrafo di apertura in parole semplici: dove siamo arrivati e
+   cosa resta, per chi non conosce i compiti, senza codici di compito.
+2. Un elenco numerato, una voce per fase rimasta, nell'ordine in cui si
+   faranno. Ogni voce apre con il nome della fase in grassetto e, tra
+   parentesi, le ore stimate e il giorno di fine (per esempio «circa 5 ore
+   e mezza, venerdì 6 entro il primo pomeriggio»), poi dice:
+   - cosa cambia, pagina per pagina o funzione per funzione, per chi usa
+     il prodotto e come sara' dopo, in parole comuni;
+   - le difficolta' vere che giustificano il tempo (cosa e' delicato, cosa
+     non si deve rompere, cosa va provato con cura), senza gergo.
+3. Le ore vengono dalla velocita' MISURATA della lavorazione (minuti per
+   compito dei giorni precedenti, revisione compresa) e da circa sette ore
+   di lavoro effettivo al giorno; si dice da dove viene il conto. Le date
+   si calcolano in sequenza, una fase dopo l'altra, saltando sabati,
+   domeniche e festivi.
+4. Dopo l'elenco: l'alternativa piu' veloce se esiste (per esempio due
+   fasi in parallelo) con la sua data; quando si rimisura la velocita' e
+   si correggono le date; i passaggi che non dipendono da chi scrive (via
+   alla pubblicazione, revisione di altri, unione) senza data; le
+   decisioni ancora da prendere, una frase ciascuna.
+Il resto delle regole di tono vale anche qui: frasi complete, parole
+comuni, nessun nome di agenti, sessioni o strumenti interni.
 
 === SEZIONE: Domande probabili e risposte pronte ===
 
